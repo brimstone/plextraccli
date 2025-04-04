@@ -21,8 +21,7 @@ This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 		RunE: cmdConfigure,
 	}
-	// configureCmd represents the configure command
-	// cmd.PersistentFlags().String("username", "", "help for foo")
+
 	return cmd
 }
 

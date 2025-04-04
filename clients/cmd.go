@@ -21,8 +21,7 @@ func Cmd() *cobra.Command {
 		Long:  `Manage clients for plextrac tenant.`,
 		RunE:  cmdClients,
 	}
-	// clientsCmd represents the clients command
-	// cmd.PersistentFlags().String("foo", "", "A help for foo")
+
 	return cmd
 }
 

@@ -22,8 +22,7 @@ func Cmd() *cobra.Command {
 		Long:  `Check reports and findings for style errors.`,
 		RunE:  cmdLint,
 	}
-	// lintCmd represents the lint command
-	// cmd.PersistentFlags().String("foo", "", "A help for foo")
+
 	return cmd
 }
 

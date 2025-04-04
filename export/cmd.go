@@ -28,6 +28,7 @@ This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 		RunE: cmdExport,
 	}
+
 	cmd.PersistentFlags().StringP("type", "t", allowedFormats[0], "Format type. One of: "+strings.Join(allowedFormats, ",")+".")
 	cmd.PersistentFlags().StringP("out", "o", "", "Output file")
 

@@ -9,7 +9,7 @@ test: plextraccli
 	plextraccli --client demo reports --cols err
 
 .PHONY: lint
-lint:
+lint: plextraccli
 	go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.0.2 run
 
 .PHONY: lint-fix
@@ -25,3 +25,7 @@ watch:
 		fi; \
 		n="$$m"; \
 	done
+
+.PHONY: pre-commit
+pre-commit: plextraccli
+	go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.0.2 run --disable godox

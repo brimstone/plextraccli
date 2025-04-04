@@ -1,3 +1,5 @@
+// Copyright (c) 2025 Matt Robinson brimstone@the.narro.ws
+
 package plextrac
 
 import (
@@ -27,6 +29,7 @@ func (r *Report) export(extension string, filename string) ([]error, error) {
 			json, err = r.c.ua.apiGet(fmt.Sprintf("v1/client/%d/report/%d/export/word?includeEvidence=false&templateID=%s", r.c.ID, r.ID, templateResponse.ExportTemplateID), &reportResp)
 	*/
 	slog.Debug("Starting export")
+
 	body, err := r.c.ua.apiGet(fmt.Sprintf("v1/client/%d/report/%d/export/%s?includeEvidence=false", r.c.ID, r.ID, extension), nil)
 	if err != nil {
 		return nil, fmt.Errorf("while calling export api: %w", err)
@@ -36,10 +39,12 @@ func (r *Report) export(extension string, filename string) ([]error, error) {
 	if _, err := os.Stat(filename); !errors.Is(err, os.ErrNotExist) {
 		return nil, fmt.Errorf("%s already exists", filename)
 	}
+
 	err = os.WriteFile(filename, []byte(body), 0600)
 	if err != nil {
 		return nil, fmt.Errorf("while writing file to disk: %w", err)
 	}
+
 	return nil, nil
 }
 

@@ -143,6 +143,11 @@ func lintFindings(findings []plextrac.Finding) []error {
 	var errs []error
 
 	for _, f := range findings {
+		// TODO check for past tense
+		// Maybe https://github.com/neurosnap/sentences + https://github.com/jdkato/prose
+		// TODO check for heading 3, 2 and 1 cuz those look bad
+		// TODO check that there is at least one tag set
+		// TODO check that the report has those tags too
 		assets, warnings, err := f.Assets()
 		if err != nil {
 			return []error{err}
@@ -168,11 +173,6 @@ func lintFindings(findings []plextrac.Finding) []error {
 		if strings.Index(f.Evidence, ".</figcaption>") > 0 {
 			errs = append(errs, fmt.Errorf("finding %q has at least one caption ending with a period", f.Name))
 		}
-		// TODO check for past tense
-		// Maybe https://github.com/neurosnap/sentences + https://github.com/jdkato/prose
-		// TODO check for heading 3, 2 and 1 cuz those look bad
-		// TODO check that there is at least one tag set
-		// TODO check that the report has those tags too
 	}
 
 	return errs

@@ -3,7 +3,6 @@
 package main
 
 import (
-	"fmt"
 	"log/slog"
 	"os"
 	"path"
@@ -29,10 +28,12 @@ func main() {
 	slog.SetDefault(slog.New(h))
 
 	// TODO check for environment variable now
-	//programLevel.Set(slog.LevelDebug)
+	if os.Getenv("DEBUG") != "" {
+		programLevel.Set(slog.LevelDebug)
+	}
 
 	var rootCmd = &cobra.Command{
-		Use:   "plextrac",
+		Use:   "plextraccli",
 		Short: "A brief description of your application",
 		Long: `A longer description that spans multiple lines and likely contains
 examples and usage of using your application. For example:
@@ -111,9 +112,6 @@ to quickly create a Cobra application.`,
 	rootCmd.AddCommand(users.Cmd())
 
 	cobra.OnInitialize(initConfig)
-
-	fmt.Printf("debug: %#v\n", rootCmd.PersistentFlags().Lookup("debug"))
-	// programLevel.Set(slog.LevelDebug)
 
 	// Execute adds all child commands to the root command and sets flags appropriately.
 	// This is called by main.main(). It only needs to happen once to the rootCmd.

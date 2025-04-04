@@ -29,3 +29,7 @@ watch:
 .PHONY: pre-commit
 pre-commit: plextraccli
 	go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.0.2 run --disable godox
+
+.PHONY: release
+release:
+	~/go/bin/goreleaser release --snapshot --clean

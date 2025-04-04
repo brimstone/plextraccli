@@ -4,7 +4,6 @@ package update
 
 import (
 	"fmt"
-	"log/slog"
 	"plextraccli/version"
 
 	"github.com/blang/semver"
@@ -29,7 +28,7 @@ to quickly create a Cobra application.`,
 }
 
 func cmdUpdate(cmd *cobra.Command, args []string) error {
-	slog.Info("Checking and applying update")
+	fmt.Println("Checking and applying update")
 
 	v := semver.MustParse(version.Version)
 
@@ -40,14 +39,10 @@ func cmdUpdate(cmd *cobra.Command, args []string) error {
 
 	if latest.Version.Equals(v) {
 		// latest version is the same as current version. It means current binary is up to date.
-		slog.Info("Current binary is the latest version",
-			"version", version.Version,
-		)
+		fmt.Printf("Current binary is the latest version, %s\n", version.Version)
 	} else {
-		slog.Info("Successfully updated to version",
-			"version", latest.Version,
-			"notes", latest.ReleaseNotes,
-		)
+		fmt.Printf("Successfully updated to version %s\n", latest.Version)
+		fmt.Println(latest.ReleaseNotes)
 	}
 
 	return nil

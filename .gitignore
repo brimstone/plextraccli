@@ -1,0 +1,4 @@
+/plextraccli
+/plextraccli.exe
+# Added by goreleaser init:
+dist/

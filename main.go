@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"plextraccli/assets"
 	"plextraccli/clients"
+	"plextraccli/configure"
 	"plextraccli/export"
 	"plextraccli/findings"
 	"plextraccli/lint"
@@ -100,7 +101,7 @@ func main() {
 
 	rootCmd.AddCommand(assets.Cmd())
 	rootCmd.AddCommand(clients.Cmd())
-	//rootCmd.AddCommand(configure.Cmd()) // TODO this doesn't work yet
+	rootCmd.AddCommand(configure.Cmd())
 	rootCmd.AddCommand(export.Cmd())
 	rootCmd.AddCommand(findings.Cmd())
 	rootCmd.AddCommand(lint.Cmd())

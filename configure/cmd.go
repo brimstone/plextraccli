@@ -4,6 +4,9 @@ package configure
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
+	"runtime"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -12,22 +15,37 @@ import (
 func Cmd() *cobra.Command {
 	var cmd = &cobra.Command{
 		Use:   "configure",
-		Short: "A brief description of your command",
-		Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
-		RunE: cmdConfigure,
+		Short: "Configure plextraccli",
+		Long:  `Configure plextraccli`,
+		RunE:  cmdConfigure,
 	}
 
 	return cmd
 }
 
+// Lifted from viper's source.
+func userHomeDir() string {
+	if runtime.GOOS == "windows" {
+		home := os.Getenv("HOMEDRIVE") + os.Getenv("HOMEPATH")
+		if home == "" {
+			home = os.Getenv("USERPROFILE")
+		}
+
+		return home
+	}
+
+	return os.Getenv("HOME")
+}
+
 func cmdConfigure(cmd *cobra.Command, args []string) error {
-	fmt.Printf("username: %s\n", viper.GetString("username"))
-	fmt.Printf("password: %s\n", viper.GetString("password"))
+	viper.SetConfigFile(filepath.Join(userHomeDir(), ".plextrac.yaml"))
+	viper.SetConfigType("yaml")
+	fmt.Printf("Writing config to %s\n", viper.ConfigFileUsed())
+
+	err := viper.WriteConfig()
+	if err != nil {
+		fmt.Println(err)
+	}
 
 	return nil
 }

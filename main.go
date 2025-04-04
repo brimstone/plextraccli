@@ -14,6 +14,7 @@ import (
 	"plextraccli/findings"
 	"plextraccli/lint"
 	"plextraccli/reports"
+	"plextraccli/update"
 	"plextraccli/users"
 	"strings"
 
@@ -106,6 +107,7 @@ to quickly create a Cobra application.`,
 	rootCmd.AddCommand(findings.Cmd())
 	rootCmd.AddCommand(lint.Cmd())
 	rootCmd.AddCommand(reports.Cmd())
+	rootCmd.AddCommand(update.Cmd())
 	rootCmd.AddCommand(users.Cmd())
 
 	cobra.OnInitialize(initConfig)

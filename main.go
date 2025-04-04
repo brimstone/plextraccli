@@ -6,9 +6,9 @@ import (
 	"log/slog"
 	"os"
 	"path"
+	"path/filepath"
 	"plextraccli/assets"
 	"plextraccli/clients"
-	"plextraccli/configure"
 	"plextraccli/export"
 	"plextraccli/findings"
 	"plextraccli/lint"
@@ -27,23 +27,20 @@ func main() {
 	h := slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: programLevel})
 	slog.SetDefault(slog.New(h))
 
-	// TODO check for environment variable now
+	// check for environment variable now
 	if os.Getenv("DEBUG") != "" {
 		programLevel.Set(slog.LevelDebug)
 	}
 
-	var rootCmd = &cobra.Command{
-		Use:   "plextraccli",
-		Short: "A brief description of your application",
-		Long: `A longer description that spans multiple lines and likely contains
-examples and usage of using your application. For example:
+	me, err := os.Executable()
+	if err != nil {
+		panic(err)
+	}
 
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
-		// Uncomment the following line if your bare application
-		// has an action associated with it:
-		// Run: func(cmd *cobra.Command, args []string) { },
+	var rootCmd = &cobra.Command{
+		Use:   filepath.Base(me),
+		Short: "CLI to plextrac.com",
+		Long:  `CLI to plextrac.com`,
 	}
 	// Here you will define your flags and configuration settings.
 	// Cobra supports persistent flags, which, if defined here,
@@ -51,7 +48,7 @@ to quickly create a Cobra application.`,
 
 	rootCmd.PersistentFlags().StringP("username", "u", "", "Username")
 
-	err := viper.BindPFlag("username", rootCmd.PersistentFlags().Lookup("username"))
+	err = viper.BindPFlag("username", rootCmd.PersistentFlags().Lookup("username"))
 	if err != nil {
 		panic(err)
 	}
@@ -70,7 +67,7 @@ to quickly create a Cobra application.`,
 		panic(err)
 	}
 
-	rootCmd.PersistentFlags().String("mfaseed", "", "MFA Seed")
+	rootCmd.PersistentFlags().String("mfaseed", "", "MFA Seed to automatically derive MFA value")
 
 	err = viper.BindPFlag("mfaseed", rootCmd.PersistentFlags().Lookup("mfaseed"))
 	if err != nil {
@@ -78,7 +75,7 @@ to quickly create a Cobra application.`,
 	}
 
 	// Client
-	rootCmd.PersistentFlags().StringP("client", "c", "", "Client")
+	rootCmd.PersistentFlags().StringP("client", "c", "", "Partial name of client")
 
 	err = viper.BindPFlag("client", rootCmd.PersistentFlags().Lookup("client"))
 	if err != nil {
@@ -86,7 +83,7 @@ to quickly create a Cobra application.`,
 	}
 
 	// Report
-	rootCmd.PersistentFlags().StringP("report", "r", "", "Report")
+	rootCmd.PersistentFlags().StringP("report", "r", "", "Partial name of report")
 
 	err = viper.BindPFlag("report", rootCmd.PersistentFlags().Lookup("report"))
 	if err != nil {
@@ -94,7 +91,7 @@ to quickly create a Cobra application.`,
 	}
 
 	// Finding
-	rootCmd.PersistentFlags().StringP("finding", "f", "", "Finding")
+	rootCmd.PersistentFlags().StringP("finding", "f", "", "Partial name of finding")
 
 	err = viper.BindPFlag("finding", rootCmd.PersistentFlags().Lookup("finding"))
 	if err != nil {
@@ -103,7 +100,7 @@ to quickly create a Cobra application.`,
 
 	rootCmd.AddCommand(assets.Cmd())
 	rootCmd.AddCommand(clients.Cmd())
-	rootCmd.AddCommand(configure.Cmd())
+	//rootCmd.AddCommand(configure.Cmd()) // TODO this doesn't work yet
 	rootCmd.AddCommand(export.Cmd())
 	rootCmd.AddCommand(findings.Cmd())
 	rootCmd.AddCommand(lint.Cmd())
@@ -123,7 +120,6 @@ to quickly create a Cobra application.`,
 }
 
 func initConfig() {
-	// viper.SetConfigType("yaml")
 	// First look at the home directory
 	viper.SetConfigName(".plextrac")
 	viper.AddConfigPath("$HOME")

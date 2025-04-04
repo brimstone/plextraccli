@@ -20,14 +20,9 @@ var defaultCols = []string{"status", "published", "name"}
 func Cmd() *cobra.Command {
 	var cmd = &cobra.Command{
 		Use:   "findings",
-		Short: "A brief description of your command",
-		Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
-		RunE: cmdFindings,
+		Short: "Manage findings for a report",
+		Long:  `Manage findings for a report.`,
+		RunE:  cmdFindings,
 	}
 	// findingsCmd represents the findings command
 	cmd.PersistentFlags().String("cols", strings.Join(defaultCols, ","), "Columns to show")

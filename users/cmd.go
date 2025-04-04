@@ -3,8 +3,8 @@
 package users
 
 import (
-	"fmt"
 	"plextraccli/plextrac"
+	"plextraccli/utils"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -13,14 +13,9 @@ import (
 func Cmd() *cobra.Command {
 	var cmd = &cobra.Command{
 		Use:   "users",
-		Short: "A brief description of your command",
-		Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
-		RunE: cmdUsers,
+		Short: "Manage users",
+		Long:  `Manage users to plextrac tenant.`,
+		RunE:  cmdUsers,
 	}
 	// usersCmd represents the users command
 	cmd.PersistentFlags().String("foo", "", "A help for foo")
@@ -39,16 +34,25 @@ func cmdUsers(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	for _, r := range users {
-		fmt.Printf("%s %s\n",
-			r.Name,
-			r.Email,
-		)
+	var rows [][]string
+	for _, user := range users {
+		rows = append(rows, []string{
+			user.Name,
+			user.Email,
+		})
 	}
-	/*
-		for _, warning := range warnings {
-			fmt.Fprintf(os.Stderr, "Warning: %#v\n", warning)
-		}
-	*/
+
+	utils.ShowTable(
+		[]string{
+			"Name",
+			"Email",
+		},
+		rows,
+		[]string{
+			"name",
+			"email",
+		},
+	)
+
 	return nil
 }

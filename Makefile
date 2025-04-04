@@ -13,7 +13,7 @@ lint: plextraccli
 	go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.0.2 run
 
 .PHONY: lint-fix
-lint-fix:
+lint-fix: plextraccli
 	go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.0.2 run --fix
 
 .PHONY: watch

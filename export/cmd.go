@@ -19,14 +19,9 @@ var allowedFormats = []string{"doc", "ptrac"}
 func Cmd() *cobra.Command {
 	var cmd = &cobra.Command{
 		Use:   "export",
-		Short: "A brief description of your command",
-		Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
-		RunE: cmdExport,
+		Short: "Export reports in various formats",
+		Long:  `Export reports in various formats.`,
+		RunE:  cmdExport,
 	}
 
 	cmd.PersistentFlags().StringP("type", "t", allowedFormats[0], "Format type. One of: "+strings.Join(allowedFormats, ",")+".")

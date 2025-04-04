@@ -5,6 +5,7 @@ package export
 import (
 	"errors"
 	"fmt"
+	"log/slog"
 	"os"
 	"plextraccli/plextrac"
 	"slices"
@@ -25,7 +26,7 @@ func Cmd() *cobra.Command {
 	}
 
 	cmd.PersistentFlags().StringP("type", "t", allowedFormats[0], "Format type. One of: "+strings.Join(allowedFormats, ",")+".")
-	cmd.PersistentFlags().StringP("out", "o", "", "Output file")
+	cmd.PersistentFlags().StringP("out", "o", "", "Output file (default: name of report)")
 
 	return cmd
 }
@@ -65,6 +66,14 @@ func cmdExport(cmd *cobra.Command, args []string) error {
 
 	for _, warning := range warnings {
 		fmt.Printf("Warning: %#v\n", warning)
+	}
+
+	slog.Debug("Filename",
+		"filename", filename,
+	)
+
+	if filename == "" {
+		filename = r.Name
 	}
 
 	switch format {

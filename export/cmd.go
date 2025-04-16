@@ -6,8 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
-	"os"
-	"plextraccli/plextrac"
+	"plextraccli/utils"
 	"slices"
 	"strings"
 
@@ -15,7 +14,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-var allowedFormats = []string{"doc", "ptrac"}
+var allowedFormats = []string{"doc", "ptrac", "md"}
 
 func Cmd() *cobra.Command {
 	var cmd = &cobra.Command{
@@ -39,7 +38,7 @@ func cmdExport(cmd *cobra.Command, args []string) error {
 		return errors.New("not an allowed export format")
 	}
 
-	p, err := plextrac.New(viper.GetString("username"), viper.GetString("password"), viper.GetString("mfa"), viper.GetString("mfaseed"))
+	p, warnings, err := utils.NewPlextrac()
 	if err != nil {
 		return err
 	}
@@ -59,22 +58,27 @@ func cmdExport(cmd *cobra.Command, args []string) error {
 		return errors.New("must specify a report")
 	}
 
-	r, warnings, err := c.ReportByPartial(reportPartial)
+	r, warnings2, err := c.ReportByPartial(reportPartial)
 	if err != nil {
 		return err
 	}
 
-	for _, warning := range warnings {
-		fmt.Printf("Warning: %#v\n", warning)
-	}
+	warnings = append(warnings, warnings2...)
 
-	slog.Debug("Filename",
-		"filename", filename,
-	)
+	for _, warning := range warnings {
+		slog.Warn("Warning while creating plextrac instance",
+			"warning", warning,
+		)
+	}
 
 	if filename == "" {
 		filename = r.Name
 	}
+
+	slog.Debug("Export options",
+		"filename", filename,
+		"type", format,
+	)
 
 	switch format {
 	case "ptrac":
@@ -85,6 +89,10 @@ func cmdExport(cmd *cobra.Command, args []string) error {
 		filename = strings.TrimSuffix(filename, ".docx")
 		filename += ".docx"
 		warnings, err = r.ExportDoc(filename)
+	case "md":
+		filename = strings.TrimSuffix(filename, ".md")
+		filename += ".md"
+		warnings, err = r.ExportMarkdown(filename)
 	default:
 		err = errors.New("unsupported export format")
 	}
@@ -96,7 +104,9 @@ func cmdExport(cmd *cobra.Command, args []string) error {
 	fmt.Printf("Exporting %q as %s to %s\n", r.Name, format, filename)
 
 	for _, warning := range warnings {
-		fmt.Fprintf(os.Stderr, "Warning: %#v\n", warning)
+		slog.Warn("Warning while creating plextrac instance",
+			"warning", warning,
+		)
 	}
 
 	return nil

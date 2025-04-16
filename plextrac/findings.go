@@ -5,6 +5,8 @@ package plextrac
 import (
 	"errors"
 	"fmt"
+	"net/http"
+	"slices"
 	"strings"
 )
 
@@ -12,13 +14,14 @@ type Finding struct {
 	r      *Report
 	assets []Asset
 	full   bool
+	raw    map[string]interface{}
 
 	ID        int
 	Status    string
 	Name      string
 	Published string
 	Evidence  string
-	Tags      []string
+	tags      []string
 }
 
 type findingsResponse struct {
@@ -39,7 +42,7 @@ type findingsResponse struct {
 	// 11 string empty?
 }
 
-func (r *Report) Findings() ([]Finding, []error, error) {
+func (r *Report) Findings() ([]*Finding, []error, error) {
 	var findingsResp []findingsResponse
 
 	var warnings []error
@@ -52,7 +55,7 @@ func (r *Report) Findings() ([]Finding, []error, error) {
 	}
 	//fmt.Printf("Json: %s\n", body) // DEBUG
 	for _, f := range findingsResp {
-		finding := Finding{
+		finding := &Finding{
 			r: r,
 		}
 
@@ -95,10 +98,10 @@ func (r *Report) Findings() ([]Finding, []error, error) {
 	return r.findings, warnings, nil
 }
 
-func (r *Report) FindingByPartial(partial string) (Finding, error) {
+func (r *Report) FindingByPartial(partial string) (*Finding, error) {
 	findings, warnings, err := r.Findings()
 
-	var match Finding
+	var match *Finding
 
 	if err != nil {
 		return match, err
@@ -165,7 +168,7 @@ func findingEvidence(m map[string]interface{}) (string, []error, error) {
 
 	_, ok = fields["evidence"]
 	if !ok {
-		return "", nil, errors.New("evidence is missing")
+		return "", []error{errors.New("evidence is missing")}, nil
 	}
 
 	evidence, ok := fields["evidence"].(map[string]interface{})
@@ -183,9 +186,6 @@ func findingEvidence(m map[string]interface{}) (string, []error, error) {
 }
 
 func (f *Finding) EnsureFull() ([]error, error) {
-	// var findingResp []findingResponse
-	var findingResp map[string]interface{}
-
 	var warnings []error
 
 	var warningsParsed []error
@@ -197,9 +197,8 @@ func (f *Finding) EnsureFull() ([]error, error) {
 	}
 
 	path := fmt.Sprintf("v1/client/%d/report/%d/flaw/%d", f.r.c.ID, f.r.ID, f.ID)
-	// fmt.Printf("Path: %s\n", path)
-	_, err = f.r.ua.apiGet(path, &findingResp)
-	// fmt.Printf("Json: %s\n", body) // DEBUG
+
+	_, err = f.r.ua.apiGet(path, &f.raw)
 	if err != nil {
 		return nil, err
 	}
@@ -207,7 +206,7 @@ func (f *Finding) EnsureFull() ([]error, error) {
 	f.full = true
 
 	// Parse Affected Assets
-	f.assets, warningsParsed, err = findingAssets(findingResp)
+	f.assets, warningsParsed, err = findingAssets(f.raw)
 	if err != nil {
 		return nil, err
 	}
@@ -215,7 +214,7 @@ func (f *Finding) EnsureFull() ([]error, error) {
 	warnings = append(warnings, warningsParsed...)
 
 	// Parse Evidence
-	f.Evidence, warningsParsed, err = findingEvidence(findingResp)
+	f.Evidence, warningsParsed, err = findingEvidence(f.raw)
 	if err != nil {
 		return nil, err
 	}
@@ -223,17 +222,81 @@ func (f *Finding) EnsureFull() ([]error, error) {
 	warnings = append(warnings, warningsParsed...)
 
 	// Parse Tags
-	if tags, ok := findingResp["tags"].([]interface{}); ok {
+	if tags, ok := f.raw["tags"].([]interface{}); ok {
 		for _, t := range tags {
 			if tag, ok := t.(string); ok {
-				f.Tags = append(f.Tags, tag)
+				f.tags = append(f.tags, tag)
 			} else {
 				warnings = append(warnings, fmt.Errorf("unable to coerce %#v into a string", tag))
 			}
 		}
 	} else {
-		warnings = append(warnings, fmt.Errorf("unable to coerce %#v into a []string", findingResp["tags"]))
+		warnings = append(warnings, fmt.Errorf("unable to coerce %#v into a []string", f.raw["tags"]))
 	}
 
 	return warnings, nil
+}
+
+func (f *Finding) update() ([]error, error) {
+	path := fmt.Sprintf("v1/client/%d/report/%d/flaw/%d", f.r.c.ID, f.r.ID, f.ID)
+
+	body, err := f.r.ua.apiCall(http.MethodPut, path, f.raw, nil)
+	if err != nil {
+		fmt.Printf("body: %s\n", body)
+
+		return nil, fmt.Errorf("error updating finding: %w", err)
+	}
+
+	return nil, nil
+}
+
+func (f *Finding) Tags() []string {
+	_, _ = f.EnsureFull()
+
+	return f.tags
+}
+
+func (f *Finding) AddTags(tags []string) ([]error, error) {
+	warnings, err := f.EnsureFull()
+	if err != nil {
+		return warnings, err
+	}
+
+	f.tags = append(f.tags, tags...)
+	f.raw["tags"] = f.tags
+	warnings2, err := f.update()
+	warnings = append(warnings, warnings2...)
+
+	return warnings, err
+}
+
+func (f *Finding) RemoveTags(tags []string) ([]error, error) {
+	warnings, err := f.EnsureFull()
+	if err != nil {
+		return warnings, err
+	}
+
+	f.tags = slices.DeleteFunc(f.tags, func(t string) bool {
+		return slices.Contains(tags, t)
+	})
+	fmt.Printf("tags: %#v\n", f.tags)
+	f.raw["tags"] = f.tags
+	warnings2, err := f.update()
+	warnings = append(warnings, warnings2...)
+
+	return warnings, err
+}
+
+func (f *Finding) SetTags(tags []string) ([]error, error) {
+	warnings, err := f.EnsureFull()
+	if err != nil {
+		return warnings, err
+	}
+
+	f.tags = tags
+	f.raw["tags"] = f.tags
+	warnings2, err := f.update()
+	warnings = append(warnings, warnings2...)
+
+	return warnings, err
 }

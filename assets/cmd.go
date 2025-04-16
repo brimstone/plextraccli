@@ -6,8 +6,10 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
+	"log/slog"
 	"os"
 	"plextraccli/plextrac"
+	"plextraccli/utils"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -32,12 +34,18 @@ func Cmd() *cobra.Command {
 	return cmd
 }
 
-func assetArgs() (plextrac.Finding, error) {
-	var f plextrac.Finding
+func assetArgs() (*plextrac.Finding, error) {
+	var f *plextrac.Finding
 
-	p, err := plextrac.New(viper.GetString("username"), viper.GetString("password"), viper.GetString("mfa"), viper.GetString("mfaseed"))
+	p, warnings, err := utils.NewPlextrac()
 	if err != nil {
 		return f, err
+	}
+
+	for _, warning := range warnings {
+		slog.Warn("Warning while creating plextrac instance",
+			"warning", warning,
+		)
 	}
 
 	// Get Client

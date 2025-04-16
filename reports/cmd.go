@@ -4,9 +4,7 @@ package reports
 
 import (
 	"errors"
-	"fmt"
-	"os"
-	"plextraccli/plextrac"
+	"log/slog"
 	"plextraccli/utils"
 	"strings"
 	"time"
@@ -31,9 +29,15 @@ func Cmd() *cobra.Command {
 }
 
 func cmdReports(cmd *cobra.Command, args []string) error {
-	p, err := plextrac.New(viper.GetString("username"), viper.GetString("password"), viper.GetString("mfa"), viper.GetString("mfaseed"))
+	p, warnings, err := utils.NewPlextrac()
 	if err != nil {
 		return err
+	}
+
+	for _, warning := range warnings {
+		slog.Warn("Warning while creating plextrac instance",
+			"warning", warning,
+		)
 	}
 
 	clientPartial := viper.GetString("client")
@@ -59,9 +63,8 @@ func cmdReports(cmd *cobra.Command, args []string) error {
 			r.Status,
 			r.StartDate.Format(time.DateOnly),
 			r.Name,
-			strings.Join(r.Tags, ","),
-		},
-		)
+			strings.Join(r.Tags(), ","),
+		})
 	}
 
 	utils.ShowTable(
@@ -76,7 +79,9 @@ func cmdReports(cmd *cobra.Command, args []string) error {
 	)
 
 	for _, warning := range warnings {
-		fmt.Fprintf(os.Stderr, "Warning: %#v\n", warning)
+		slog.Warn("Warning while creating plextrac instance",
+			"warning", warning,
+		)
 	}
 
 	return nil

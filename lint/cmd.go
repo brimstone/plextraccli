@@ -5,8 +5,9 @@ package lint
 import (
 	"errors"
 	"fmt"
-	"os"
+	"log/slog"
 	"plextraccli/plextrac"
+	"plextraccli/utils"
 	"regexp"
 	"slices"
 	"strings"
@@ -26,7 +27,7 @@ func Cmd() *cobra.Command {
 	return cmd
 }
 
-func lintReport(report plextrac.Report) []error {
+func lintReport(report *plextrac.Report) []error {
 	var errs []error
 	// General Details
 	if report.StartDate.IsZero() {
@@ -45,7 +46,7 @@ func lintReport(report plextrac.Report) []error {
 		errs = append(errs, errors.New("report is still in draft"))
 	}
 
-	if len(report.Tags) == 0 {
+	if len(report.Tags()) == 0 {
 		errs = append(errs, errors.New("report has no tags"))
 	}
 
@@ -73,7 +74,7 @@ func lintReport(report plextrac.Report) []error {
 	}
 
 	// TODO move this out to the config file
-	for _, t := range report.Tags {
+	for _, t := range report.Tags() {
 		switch t {
 		case "scope_ipt":
 			requiredSections = append(requiredSections, "Finding Summary: Internal Network Penetration Test")
@@ -133,7 +134,7 @@ func lintReport(report plextrac.Report) []error {
 	return errs
 }
 
-func lintFindings(findings []plextrac.Finding) []error {
+func lintFindings(findings []*plextrac.Finding) []error {
 	var errs []error
 
 	for _, f := range findings {
@@ -147,8 +148,10 @@ func lintFindings(findings []plextrac.Finding) []error {
 			return []error{err}
 		}
 
-		for _, w := range warnings {
-			fmt.Printf("Warning: %s\n", w)
+		for _, warning := range warnings {
+			slog.Warn("Warning while creating plextrac instance",
+				"warning", warning,
+			)
 		}
 		// Lint: Check all findings have assets
 		if len(assets) == 0 {
@@ -175,7 +178,7 @@ func lintFindings(findings []plextrac.Finding) []error {
 // TODO lint narrative
 
 func cmdLint(cmd *cobra.Command, args []string) error {
-	p, err := plextrac.New(viper.GetString("username"), viper.GetString("password"), viper.GetString("mfa"), viper.GetString("mfaseed"))
+	p, warnings, err := utils.NewPlextrac()
 	if err != nil {
 		return err
 	}
@@ -195,10 +198,12 @@ func cmdLint(cmd *cobra.Command, args []string) error {
 		return errors.New("must specify a report")
 	}
 
-	r, warnings, err := c.ReportByPartial(reportPartial)
+	r, warnings2, err := c.ReportByPartial(reportPartial)
 	if err != nil {
 		return err
 	}
+
+	warnings = append(warnings, warnings2...)
 
 	errors := lintReport(r)
 	if len(errors) > 0 {
@@ -225,7 +230,9 @@ func cmdLint(cmd *cobra.Command, args []string) error {
 	}
 
 	for _, warning := range warnings {
-		fmt.Fprintf(os.Stderr, "Warning: %#v\n", warning)
+		slog.Warn("Warning while creating plextrac instance",
+			"warning", warning,
+		)
 	}
 
 	return nil

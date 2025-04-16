@@ -54,3 +54,6 @@ func (r *Report) ExportDoc(filename string) ([]error, error) {
 func (r *Report) ExportPtrac(filename string) ([]error, error) {
 	return r.export("ptrac", filename)
 }
+func (r *Report) ExportMarkdown(filename string) ([]error, error) {
+	return r.export("md", filename)
+}

@@ -3,11 +3,10 @@
 package users
 
 import (
-	"plextraccli/plextrac"
+	"log/slog"
 	"plextraccli/utils"
 
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
 func Cmd() *cobra.Command {
@@ -22,9 +21,15 @@ func Cmd() *cobra.Command {
 }
 
 func cmdUsers(cmd *cobra.Command, args []string) error {
-	p, err := plextrac.New(viper.GetString("username"), viper.GetString("password"), viper.GetString("mfa"), viper.GetString("mfaseed"))
+	p, warnings, err := utils.NewPlextrac()
 	if err != nil {
 		return err
+	}
+
+	for _, warning := range warnings {
+		slog.Warn("Warning while creating plextrac instance",
+			"warning", warning,
+		)
 	}
 
 	users, err := p.Users()

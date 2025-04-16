@@ -3,11 +3,38 @@
 package plextrac
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
+	"slices"
 	"strings"
 	"time"
 )
+
+type Report struct {
+	ua         *UserAgent
+	c          *Client
+	findings   []*Finding
+	full       bool
+	sections   []Section
+	templateID string
+	raw        map[string]interface{}
+
+	ID               int64
+	CreatedAt        time.Time // 7
+	FindingsCount    float64   // 4
+	FindingsTemplate string    // 12
+	Name             string    // 1
+	ReportTemplate   string    // 11
+	StartDate        time.Time // 8
+	Status           string    // 3
+	StopDate         time.Time // 9
+	Operators        []string  // 5
+	Reviewers        []string  // 6
+	tags             []string  // 10
+
+}
 
 type reportResponse struct {
 	ID    int64         `json:"id"`
@@ -35,29 +62,6 @@ type Section struct {
 	Content string
 }
 
-type Report struct {
-	ua         *UserAgent
-	c          *Client
-	findings   []Finding
-	full       bool
-	sections   []Section
-	templateID string
-
-	ID               int64
-	CreatedAt        time.Time // 7
-	FindingsCount    float64   // 4
-	FindingsTemplate string    // 12
-	Name             string    // 1
-	ReportTemplate   string    // 11
-	StartDate        time.Time // 8
-	Status           string    // 3
-	StopDate         time.Time // 9
-	Operators        []string  // 5
-	Reviewers        []string  // 6
-	Tags             []string  // 10
-
-}
-
 type fullReportResponse struct {
 	ExecSummary struct {
 		CustomFields []struct {
@@ -69,12 +73,12 @@ type fullReportResponse struct {
 	Template string `json:"template"`
 }
 
-func (c *Client) Reports() ([]Report, []error, error) {
+func (c *Client) Reports() ([]*Report, []error, error) {
 	var warnings []error
 
 	var reportResp []reportResponse
 
-	var reports []Report
+	var reports []*Report
 
 	_, err := c.ua.apiGet(fmt.Sprintf("v1/client/%d/reports", c.ID), &reportResp)
 	if err != nil {
@@ -82,7 +86,7 @@ func (c *Client) Reports() ([]Report, []error, error) {
 	}
 
 	for _, r := range reportResp {
-		report := Report{
+		report := &Report{
 			ID: r.ID,
 			ua: c.ua,
 			c:  c,
@@ -139,18 +143,20 @@ func (c *Client) Reports() ([]Report, []error, error) {
 		if s, ok := r.Data[3].(string); ok {
 			report.Status = s
 		} else {
-			warnings = append(warnings, errors.New("can't coerce data[3] into string for status"))
+			warnings = append(warnings, fmt.Errorf("%d: can't coerce data[3] into string for status", r.ID))
 		}
 
 		// StopDate 9
-		if s, ok := r.Data[9].(string); ok {
-			if t, err := time.Parse("2006-01-02T15:04:05.999Z", s); err == nil {
-				report.StopDate = t.UTC()
+		if r.Data[9] != nil {
+			if s, ok := r.Data[9].(string); ok {
+				if t, err := time.Parse("2006-01-02T15:04:05.999Z", s); err == nil {
+					report.StopDate = t.UTC()
+				} else {
+					warnings = append(warnings, fmt.Errorf("%d: can't parse data[9] into date for StopDate: %#v", r.ID, r.Data[9]))
+				}
 			} else {
-				warnings = append(warnings, fmt.Errorf("can't parse data[9] into date for StopDate: %#v", r.Data[9]))
+				warnings = append(warnings, fmt.Errorf("%d: can't coerce data[9] into string for StopDate: %#v", r.ID, r.Data[9]))
 			}
-		} else {
-			warnings = append(warnings, fmt.Errorf("can't coerce data[9] into string for StopDate: %#v", r.Data[9]))
 		}
 
 		// TODO Operators 5
@@ -161,7 +167,7 @@ func (c *Client) Reports() ([]Report, []error, error) {
 		if s, ok := r.Data[10].([]interface{}); ok {
 			for i, j := range s {
 				if t, ok := j.(string); ok {
-					report.Tags = append(report.Tags, t)
+					report.tags = append(report.tags, t)
 				} else {
 					warnings = append(warnings, fmt.Errorf("can't coerce data[10][%d] into string for slice for Tags: %#v", i, r.Data[10]))
 				}
@@ -176,10 +182,10 @@ func (c *Client) Reports() ([]Report, []error, error) {
 	return reports, warnings, nil
 }
 
-func (c *Client) ReportByPartial(partial string) (Report, []error, error) {
+func (c *Client) ReportByPartial(partial string) (*Report, []error, error) {
 	reports, warnings, err := c.Reports()
 
-	var match Report
+	var match *Report
 
 	if err != nil {
 		return match, warnings, err
@@ -188,6 +194,13 @@ func (c *Client) ReportByPartial(partial string) (Report, []error, error) {
 	matches := 0
 
 	for _, r := range reports {
+		if partial == r.Name {
+			match = r
+			matches = 1
+
+			break
+		}
+
 		if strings.Contains(strings.ToLower(r.Name), strings.ToLower(partial)) {
 			match = r
 			matches++
@@ -195,11 +208,11 @@ func (c *Client) ReportByPartial(partial string) (Report, []error, error) {
 	}
 
 	if matches == 0 {
-		return match, warnings, errors.New("report not found")
+		return nil, warnings, errors.New("report not found")
 	}
 
 	if matches > 1 {
-		return match, warnings, errors.New("multiple reports match")
+		return nil, warnings, errors.New("multiple reports match")
 	}
 
 	return match, warnings, nil
@@ -214,14 +227,23 @@ func (r *Report) EnsureFull() ([]error, error) {
 
 	var reportResp fullReportResponse
 
-	json, err := r.c.ua.apiGet(fmt.Sprintf("v1/client/%d/report/%d", r.c.ID, r.ID), &reportResp)
-	_ = json
+	_, err := r.c.ua.apiGet(fmt.Sprintf("v1/client/%d/report/%d", r.c.ID, r.ID), &r.raw)
 
 	if err != nil {
 		return nil, fmt.Errorf("unable to get reports: %w", err)
 	}
-	// fmt.Printf("json: %s\n", json)
-	// fmt.Printf("report: %#v\n", reportResp)
+
+	// TODO this is icky. What's a better way?
+	jsonReport, err := json.Marshal(r.raw)
+	if err != nil {
+		return nil, fmt.Errorf("unable to marshal report response back to json: %w", err)
+	}
+
+	err = json.Unmarshal(jsonReport, &reportResp)
+	if err != nil {
+		return nil, fmt.Errorf("unable to marshal report json back to struct: %w", err)
+	}
+
 	for _, s := range reportResp.ExecSummary.CustomFields {
 		r.sections = append(r.sections, Section{
 			ID:      s.ID,
@@ -253,4 +275,58 @@ func (r *Report) GetTemplateID() (string, []error, error) {
 	}
 
 	return r.templateID, warnings, err
+}
+
+func (r *Report) update() ([]error, error) {
+	path := fmt.Sprintf("v1/client/%d/report/%d", r.c.ID, r.ID)
+
+	body, err := r.ua.apiCall(http.MethodPut, path, r.raw, nil)
+	if err != nil {
+		fmt.Printf("body: %s\n", body)
+
+		return nil, fmt.Errorf("error updating report: %w", err)
+	}
+
+	return nil, nil
+}
+
+func (r *Report) Tags() []string {
+	return r.tags
+}
+
+func (r *Report) AddTags(tags []string) ([]error, error) {
+	warnings, err := r.EnsureFull()
+	if err != nil {
+		return warnings, err
+	}
+
+	r.tags = append(r.tags, tags...)
+	r.raw["tags"] = r.tags
+
+	return r.update()
+}
+func (r *Report) RemoveTags(tags []string) ([]error, error) {
+	warnings, err := r.EnsureFull()
+	if err != nil {
+		return warnings, err
+	}
+
+	r.tags = slices.DeleteFunc(r.tags, func(t string) bool {
+		return slices.Contains(tags, t)
+	})
+	fmt.Printf("tags: %#v\n", r.tags)
+	r.raw["tags"] = r.tags
+
+	return r.update()
+}
+func (r *Report) SetTags(tags []string) ([]error, error) {
+	warnings, err := r.EnsureFull()
+	if err != nil {
+		return warnings, err
+	}
+
+	r.tags = tags
+	r.raw["tags"] = r.tags
+
+	return r.update()
 }

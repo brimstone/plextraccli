@@ -4,9 +4,7 @@ package findings
 
 import (
 	"errors"
-	"fmt"
-	"os"
-	"plextraccli/plextrac"
+	"log/slog"
 	"plextraccli/utils"
 	"slices"
 	"strings"
@@ -31,7 +29,7 @@ func Cmd() *cobra.Command {
 }
 
 func cmdFindings(cmd *cobra.Command, args []string) error {
-	p, err := plextrac.New(viper.GetString("username"), viper.GetString("password"), viper.GetString("mfa"), viper.GetString("mfaseed"))
+	p, warnings, err := utils.NewPlextrac()
 	if err != nil {
 		return err
 	}
@@ -56,10 +54,12 @@ func cmdFindings(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	// Get Findings
-	findings, warnings, err := r.Findings()
+	findings, warnings2, err := r.Findings()
 	if err != nil {
 		return err
 	}
+
+	warnings = append(warnings, warnings2...)
 
 	showCols := utils.AggregateCols(defaultCols, cmd.Flag("cols").Value.String())
 
@@ -84,7 +84,7 @@ func cmdFindings(cmd *cobra.Command, args []string) error {
 			f.Published,
 			f.Status,
 			f.Name,
-			strings.Join(f.Tags, ","),
+			strings.Join(f.Tags(), ","),
 		},
 		)
 	}
@@ -101,7 +101,9 @@ func cmdFindings(cmd *cobra.Command, args []string) error {
 	)
 
 	for _, warning := range warnings {
-		fmt.Fprintf(os.Stderr, "Warning: %#v\n", warning)
+		slog.Warn("Warning while creating plextrac instance",
+			"warning", warning,
+		)
 	}
 
 	return nil

@@ -7,4 +7,10 @@ type Config struct {
 	Password string
 	TOTP     string
 	TOTPSeed string
+	Tags     []ConfigTag
+}
+
+type ConfigTag struct {
+	Name       string
+	Narratives []string
 }

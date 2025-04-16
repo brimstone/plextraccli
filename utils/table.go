@@ -94,9 +94,11 @@ func ShowTable(headers []string, rows [][]string, showCols []string) {
 			keepCol = append(keepCol, false)
 		}
 	}
-	// check to see if showCols still has a value, if it does, error with unsupported header
+	// check to see if showCols still has a value, if it does, error with unsupported column
 	if len(showCols) > 0 {
-		fmt.Printf("unsupported header: %s\n", showCols[0])
+		fmt.Printf("unsupported column: %s\n", showCols[0])
+
+		return
 	}
 
 	var showRows [][]string

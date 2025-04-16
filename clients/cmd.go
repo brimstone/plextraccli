@@ -3,16 +3,15 @@
 package clients
 
 import (
-	"fmt"
-	"os"
-	"plextraccli/plextrac"
+	"log/slog"
 	"plextraccli/utils"
 	"sort"
+	"strings"
 
-	"github.com/mattn/go-isatty"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
+
+var defaultCols = []string{"name", "poc", "pocemail", "tags"}
 
 func Cmd() *cobra.Command {
 	var cmd = &cobra.Command{
@@ -22,13 +21,21 @@ func Cmd() *cobra.Command {
 		RunE:  cmdClients,
 	}
 
+	cmd.PersistentFlags().String("cols", strings.Join(defaultCols, ","), "Columns to show")
+
 	return cmd
 }
 
 func cmdClients(cmd *cobra.Command, args []string) error {
-	p, err := plextrac.New(viper.GetString("username"), viper.GetString("password"), viper.GetString("mfa"), viper.GetString("mfaseed"))
+	p, warnings, err := utils.NewPlextrac()
 	if err != nil {
 		return err
+	}
+
+	for _, warning := range warnings {
+		slog.Warn("Warning while creating plextrac instance",
+			"warning", warning,
+		)
 	}
 
 	clients, err := p.Clients()
@@ -38,25 +45,28 @@ func cmdClients(cmd *cobra.Command, args []string) error {
 
 	sort.Slice(clients, func(i, j int) bool { return clients[i].Name < clients[j].Name })
 
-	if isatty.IsTerminal(os.Stdout.Fd()) {
-		t := utils.NewTable()
-		t.SetColumns(
-			[]utils.TableColumn{
-				{Title: "Name"},
-			})
+	showCols := utils.AggregateCols(defaultCols, cmd.Flag("cols").Value.String())
 
-		for _, c := range clients {
-			t.AddRow([]string{
-				c.Name,
-			})
-		}
-
-		fmt.Println(t.Render())
-	} else {
-		for _, c := range clients {
-			fmt.Printf("%s\n", c.Name)
-		}
+	var rows [][]string
+	for _, r := range clients {
+		rows = append(rows, []string{
+			r.Name,
+			r.POC,
+			r.POCEmail,
+			strings.Join(r.Tags(), ","),
+		})
 	}
+
+	utils.ShowTable(
+		[]string{
+			"Name",
+			"POC",
+			"POC Email",
+			"Tags",
+		},
+		rows,
+		showCols,
+	)
 
 	return nil
 }

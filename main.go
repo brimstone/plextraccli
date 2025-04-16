@@ -14,8 +14,10 @@ import (
 	"plextraccli/findings"
 	"plextraccli/lint"
 	"plextraccli/reports"
+	"plextraccli/tags"
 	"plextraccli/update"
 	"plextraccli/users"
+	"plextraccli/utils"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -46,6 +48,13 @@ func main() {
 	// Here you will define your flags and configuration settings.
 	// Cobra supports persistent flags, which, if defined here,
 	// will be global for your application.
+
+	rootCmd.PersistentFlags().StringP("instanceurl", "i", "", "InstanceURL")
+
+	err = viper.BindPFlag("instanceurl", rootCmd.PersistentFlags().Lookup("instanceurl"))
+	if err != nil {
+		panic(err)
+	}
 
 	rootCmd.PersistentFlags().StringP("username", "u", "", "Username")
 
@@ -106,6 +115,7 @@ func main() {
 	rootCmd.AddCommand(findings.Cmd())
 	rootCmd.AddCommand(lint.Cmd())
 	rootCmd.AddCommand(reports.Cmd())
+	rootCmd.AddCommand(tags.Cmd())
 	rootCmd.AddCommand(update.Cmd())
 	rootCmd.AddCommand(users.Cmd())
 
@@ -127,8 +137,12 @@ func initConfig() {
 
 	if err := viper.MergeInConfig(); err == nil {
 		slog.Debug("Using config",
-			"configfile", viper.ConfigFileUsed(),
+			"configFile", viper.ConfigFileUsed(),
 		)
+	}
+
+	if utils.SaveConfigFile == "" && (viper.GetString("password") != "" || viper.GetString("authtoken") != "") {
+		utils.SaveConfigFile = viper.ConfigFileUsed()
 	}
 
 	configPath := []string{
@@ -139,17 +153,27 @@ func initConfig() {
 	pwd, _ := os.Getwd()
 	for _, dir := range strings.Split(pwd, "/") {
 		configPath = append(configPath, dir)
-		viper.SetConfigFile(path.Join(append(configPath, ".plextrac.yaml")...))
+
+		configFile := path.Join(append(configPath, ".plextrac.yaml")...)
+		viper.SetConfigFile(configFile)
+
+		if viper.ConfigFileUsed() == configFile {
+			continue
+		}
 
 		if err := viper.MergeInConfig(); err == nil {
-			slog.Debug("Using config",
-				"configfile", viper.ConfigFileUsed(),
+			slog.Debug("Also using config",
+				"configFile", configFile,
 			)
 		}
 	}
 
 	viper.AutomaticEnv()
 	viper.SetEnvPrefix("PLEXTRAC")
+
+	if err := viper.BindEnv("INSTANCEURL"); err != nil {
+		panic(err)
+	}
 
 	if err := viper.BindEnv("USERNAME"); err != nil {
 		panic(err)

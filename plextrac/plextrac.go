@@ -27,6 +27,12 @@ type UserAgent struct {
 	tenantID       int
 	tenantURL      string
 	authTokenMutex sync.Mutex
+	tags           []tenantTag
+}
+
+type tenantTag struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
 }
 
 type jwtPayload struct {

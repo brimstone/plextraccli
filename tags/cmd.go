@@ -3,7 +3,6 @@
 package tags
 
 import (
-	"errors"
 	"fmt"
 	"log/slog"
 	"plextraccli/plextrac"
@@ -59,7 +58,7 @@ func getTagger(p *plextrac.UserAgent) (Tagger, error) {
 	// Get Client
 	clientPartial := viper.GetString("client")
 	if clientPartial == "" {
-		return nil, errors.New("must specify at least a client")
+		return p, nil
 	}
 
 	c, err := p.ClientByPartial(clientPartial)

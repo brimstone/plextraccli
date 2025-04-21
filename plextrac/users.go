@@ -4,10 +4,13 @@ package plextrac
 
 import (
 	"fmt"
+	"net/http"
 	"strconv"
 )
 
 type User struct {
+	ua *UserAgent
+
 	ID    int64
 	Name  string
 	Email string
@@ -46,10 +49,10 @@ type userResponse struct {
 	ID    string  `json:"id"`
 }
 
-func (ua *UserAgent) Users() ([]User, error) {
+func (ua *UserAgent) Users() ([]*User, error) {
 	var userResp []userResponse
 
-	var users []User
+	var users []*User
 
 	_, err := ua.apiGet(fmt.Sprintf("v1/tenant/%d/user/list", ua.GetTenantID()), &userResp)
 	if err != nil {
@@ -57,15 +60,46 @@ func (ua *UserAgent) Users() ([]User, error) {
 	}
 
 	for _, u := range userResp {
-		var user User
+		user := &User{}
 		if s, err := strconv.Atoi(u.ID); err == nil {
 			user.ID = int64(s)
 		}
 
+		user.ua = ua
 		user.Name = u.Data.FullName
 		user.Email = u.Data.Email
 		users = append(users, user)
 	}
 
 	return users, nil
+}
+
+func (u *User) String() string {
+	return fmt.Sprintf("%s <%s>", u.Name, u.Email)
+}
+
+func (u *User) Reset() ([]error, error) {
+	request := struct {
+		Username string `json:"username"`
+	}{
+		Username: u.Email,
+	}
+
+	response := struct {
+		Status  string `json:"status"`
+		Message string `json:"message"`
+	}{}
+
+	path := fmt.Sprintf("v1/tenant/%d/user/resetpass", u.ua.tenantID)
+
+	body, err := u.ua.apiCall(http.MethodPut, path, request, &response)
+	if err != nil {
+		return nil, err
+	}
+
+	if response.Status != "success" {
+		return nil, fmt.Errorf("error resetting user password: %s", body)
+	}
+
+	return nil, nil
 }

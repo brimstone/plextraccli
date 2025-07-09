@@ -19,6 +19,7 @@ import (
 	"plextraccli/update"
 	"plextraccli/users"
 	"plextraccli/utils"
+	"sort"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -93,10 +94,71 @@ func main() {
 		panic(err)
 	}
 
+	err = rootCmd.RegisterFlagCompletionFunc("client", func(cmd *cobra.Command, args []string, toComplete string) ([]cobra.Completion, cobra.ShellCompDirective) {
+		p, _, err := utils.NewPlextrac()
+		if err != nil {
+			// TODO something with err?
+			return nil, cobra.ShellCompDirectiveError
+		}
+
+		clients, err := p.Clients()
+		if err != nil {
+			// TODO something with err?
+			return nil, cobra.ShellCompDirectiveError
+		}
+
+		var clientNames []string
+		for _, c := range clients {
+			clientNames = append(clientNames, c.Name)
+		}
+
+		sort.Strings(clientNames)
+
+		return clientNames, 0
+	})
+	if err != nil {
+		panic(err)
+	}
+
 	// Report
 	rootCmd.PersistentFlags().StringP("report", "r", "", "Partial name of report")
 
 	err = viper.BindPFlag("report", rootCmd.PersistentFlags().Lookup("report"))
+	if err != nil {
+		panic(err)
+	}
+
+	err = rootCmd.RegisterFlagCompletionFunc("report", func(cmd *cobra.Command, args []string, toComplete string) ([]cobra.Completion, cobra.ShellCompDirective) {
+		p, _, err := utils.NewPlextrac()
+		if err != nil {
+			// TODO something with err?
+			return nil, cobra.ShellCompDirectiveError
+		}
+
+		clientPartial := viper.GetString("client")
+		if clientPartial == "" {
+			return nil, cobra.ShellCompDirectiveError
+		}
+
+		c, err := p.ClientByPartial(clientPartial)
+		if err != nil {
+			return nil, cobra.ShellCompDirectiveError
+		}
+
+		reports, _, err := c.Reports()
+		if err != nil {
+			return nil, cobra.ShellCompDirectiveError
+		}
+
+		var reportNames []string
+		for _, r := range reports {
+			reportNames = append(reportNames, r.Name)
+		}
+
+		sort.Strings(reportNames)
+
+		return reportNames, 0
+	})
 	if err != nil {
 		panic(err)
 	}

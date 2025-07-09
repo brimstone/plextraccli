@@ -127,6 +127,15 @@ func lintReport(report *plextrac.Report) []error {
 		for _, m := range matches {
 			errs = append(errs, fmt.Errorf("found contraction in section %q: %q", s.Title, m))
 		}
+
+		// Check for periods at the end of captions
+		if strings.Index(s.Content, ".</figcaption>") > 0 {
+			errs = append(errs, fmt.Errorf("narrative %s has at least one caption ending with a period", s.Title))
+		}
+
+		for _, err := range checkCapitalization(s.Content, []string{"MitM6", "NTLMRelayx"}) {
+			errs = append(errs, fmt.Errorf("narrative %q has a misspelling: %w", s.Title, err))
+		}
 	}
 
 	// TODO Check for required custom fields
@@ -170,12 +179,39 @@ func lintFindings(findings []*plextrac.Finding) []error {
 		if strings.Index(f.Evidence, ".</figcaption>") > 0 {
 			errs = append(errs, fmt.Errorf("finding %q has at least one caption ending with a period", f.Name))
 		}
+
+		for _, err := range checkCapitalization(f.Evidence, []string{"MitM6", "NTLMRelayx", "Certipy"}) {
+			errs = append(errs, fmt.Errorf("finding %q has a misspelling: %w", f.Name, err))
+		}
 	}
 
 	return errs
 }
 
-// TODO lint narrative
+func checkCapitalization(content string, words []string) []error {
+	var errs []error
+
+	for _, word := range words {
+		escapedWord := regexp.QuoteMeta(word)
+		pattern := `(?i)\b` + escapedWord + `\b` // Case-insensitive whole-word match
+
+		regex, err := regexp.Compile(pattern)
+		if err != nil {
+			errs = append(errs, err)
+
+			continue
+		}
+
+		for _, match := range regex.FindStringSubmatch(content) {
+			// Check if the exact (original) case of the word is present
+			if match != word {
+				errs = append(errs, fmt.Errorf("%q has the wrong case", match))
+			}
+		}
+	}
+
+	return errs
+}
 
 func cmdLint(cmd *cobra.Command, args []string) error {
 	p, warnings, err := utils.NewPlextrac()

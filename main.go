@@ -219,13 +219,18 @@ func initConfig() {
 		configPath = append(configPath, dir)
 
 		configFile := path.Join(append(configPath, ".plextrac.yaml")...)
-		viper.SetConfigFile(configFile)
+		slog.Debug("Searching for config file",
+			"path", configFile,
+		)
 
 		if viper.ConfigFileUsed() == configFile {
 			continue
 		}
 
-		if err := viper.MergeInConfig(); err == nil {
+		viper.SetConfigFile(configFile)
+
+		err := viper.MergeInConfig()
+		if err == nil {
 			slog.Debug("Also using config",
 				"configFile", configFile,
 			)

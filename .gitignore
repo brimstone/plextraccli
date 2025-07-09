@@ -2,3 +2,5 @@
 /plextraccli.exe
 # Added by goreleaser init:
 dist/
+*.json
+*.txt

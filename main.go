@@ -13,6 +13,7 @@ import (
 	"plextraccli/export"
 	"plextraccli/findings"
 	"plextraccli/lint"
+	"plextraccli/narrative"
 	"plextraccli/reports"
 	"plextraccli/tags"
 	"plextraccli/update"
@@ -114,6 +115,7 @@ func main() {
 	rootCmd.AddCommand(export.Cmd())
 	rootCmd.AddCommand(findings.Cmd())
 	rootCmd.AddCommand(lint.Cmd())
+	rootCmd.AddCommand(narrative.Cmd())
 	rootCmd.AddCommand(reports.Cmd())
 	rootCmd.AddCommand(tags.Cmd())
 	rootCmd.AddCommand(update.Cmd())

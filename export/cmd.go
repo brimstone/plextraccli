@@ -26,6 +26,7 @@ func Cmd() *cobra.Command {
 
 	cmd.PersistentFlags().StringP("type", "t", allowedFormats[0], "Format type. One of: "+strings.Join(allowedFormats, ",")+".")
 	cmd.PersistentFlags().StringP("out", "o", "", "Output file (default: name of report)")
+	cmd.PersistentFlags().StringP("template", "", "", "Export Template name to use (default: template specified in report template)")
 
 	return cmd
 }
@@ -37,6 +38,8 @@ func cmdExport(cmd *cobra.Command, args []string) error {
 	if !slices.Contains(allowedFormats, format) {
 		return errors.New("not an allowed export format")
 	}
+
+	templateName := cmd.Flag("template").Value.String()
 
 	p, warnings, err := utils.NewPlextrac()
 	if err != nil {
@@ -88,7 +91,7 @@ func cmdExport(cmd *cobra.Command, args []string) error {
 	case "doc":
 		filename = strings.TrimSuffix(filename, ".docx")
 		filename += ".docx"
-		warnings, err = r.ExportDoc(filename)
+		warnings, err = r.ExportDoc(filename, templateName)
 	case "md":
 		filename = strings.TrimSuffix(filename, ".md")
 		filename += ".md"

@@ -5,9 +5,10 @@ package reports
 import (
 	"errors"
 	"log/slog"
-	"plextraccli/utils"
 	"strings"
 	"time"
+
+	"github.com/brimstone/plextraccli/utils"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"

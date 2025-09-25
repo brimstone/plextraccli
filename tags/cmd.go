@@ -5,8 +5,9 @@ package tags
 import (
 	"fmt"
 	"log/slog"
-	"plextraccli/plextrac"
-	"plextraccli/utils"
+
+	"github.com/brimstone/plextraccli/plextrac"
+	"github.com/brimstone/plextraccli/utils"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"

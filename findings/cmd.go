@@ -5,9 +5,10 @@ package findings
 import (
 	"errors"
 	"log/slog"
-	"plextraccli/utils"
 	"slices"
 	"strings"
+
+	"github.com/brimstone/plextraccli/utils"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"

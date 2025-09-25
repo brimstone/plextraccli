@@ -4,8 +4,9 @@ package utils
 
 import (
 	"log/slog"
-	"plextraccli/plextrac"
 	"time"
+
+	"github.com/brimstone/plextraccli/plextrac"
 
 	"github.com/spf13/viper"
 )

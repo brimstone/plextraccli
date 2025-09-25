@@ -4,9 +4,10 @@ package clients
 
 import (
 	"log/slog"
-	"plextraccli/utils"
 	"sort"
 	"strings"
+
+	"github.com/brimstone/plextraccli/utils"
 
 	"github.com/spf13/cobra"
 )

@@ -6,9 +6,10 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
-	"plextraccli/plextrac"
-	"plextraccli/utils"
 	"strings"
+
+	"github.com/brimstone/plextraccli/plextrac"
+	"github.com/brimstone/plextraccli/utils"
 
 	"github.com/spf13/cobra"
 )

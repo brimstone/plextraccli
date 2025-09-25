@@ -4,7 +4,8 @@ package update
 
 import (
 	"fmt"
-	"plextraccli/version"
+
+	"github.com/brimstone/plextraccli/version"
 
 	"github.com/blang/semver"
 	"github.com/rhysd/go-github-selfupdate/selfupdate"

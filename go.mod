@@ -1,4 +1,4 @@
-module plextraccli
+module github.com/brimstone/plextraccli
 
 go 1.23.3
 

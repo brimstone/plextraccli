@@ -6,14 +6,18 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"time"
 )
 
 type User struct {
 	ua *UserAgent
 
-	ID    int64
-	Name  string
-	Email string
+	ID        int64
+	Name      string
+	Email     string
+	LastLogin time.Time
+	CreatedAt time.Time
+	Enabled   bool
 }
 type userResponse struct {
 	Data struct {
@@ -68,6 +72,9 @@ func (ua *UserAgent) Users() ([]*User, error) {
 		user.ua = ua
 		user.Name = u.Data.FullName
 		user.Email = u.Data.Email
+		user.LastLogin = time.Unix(u.Data.LastLogin/1000, 0)
+		user.CreatedAt = time.Unix(u.Data.CreatedAt/1000, 0)
+		user.Enabled = !u.Data.Disabled
 		users = append(users, user)
 	}
 

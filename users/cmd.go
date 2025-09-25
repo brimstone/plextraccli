@@ -6,13 +6,17 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/brimstone/plextraccli/plextrac"
 	"github.com/brimstone/plextraccli/utils"
 
 	"github.com/spf13/cobra"
 )
+
+var defaultCols = []string{"name", "email"}
 
 func Cmd() *cobra.Command {
 	var cmd = &cobra.Command{
@@ -23,6 +27,7 @@ func Cmd() *cobra.Command {
 	}
 
 	cmd.PersistentFlags().StringP("filter", "", "", "Filter users that match this")
+	cmd.PersistentFlags().String("cols", strings.Join(defaultCols, ","), "Columns to show")
 
 	// Reset-password subcommand
 	cmdReset := &cobra.Command{
@@ -50,6 +55,7 @@ func cmdUsers(cmd *cobra.Command, args []string) error {
 	}
 
 	filter := cmd.Flag("filter").Value.String()
+	showCols := utils.AggregateCols(defaultCols, cmd.Flag("cols").Value.String())
 
 	users, err := p.Users()
 	if err != nil {
@@ -64,6 +70,9 @@ func cmdUsers(cmd *cobra.Command, args []string) error {
 			rows = append(rows, []string{
 				user.Name,
 				user.Email,
+				user.LastLogin.Format(time.UnixDate),
+				user.CreatedAt.Format(time.UnixDate),
+				strconv.FormatBool(user.Enabled),
 			})
 		}
 	}
@@ -72,12 +81,12 @@ func cmdUsers(cmd *cobra.Command, args []string) error {
 		[]string{
 			"Name",
 			"Email",
+			"LastLogin",
+			"Created",
+			"Enabled",
 		},
 		rows,
-		[]string{
-			"name",
-			"email",
-		},
+		showCols,
 	)
 
 	return nil

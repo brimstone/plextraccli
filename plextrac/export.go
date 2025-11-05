@@ -5,12 +5,12 @@ package plextrac
 import (
 	"errors"
 	"fmt"
+	"io"
 	"log/slog"
-	"os"
 	"strings"
 )
 
-func (r *Report) export(extension string, filename string, templateName string) ([]error, error) {
+func (r *Report) ExportWriter(extension string, writer io.Writer, templateName string) ([]error, error) {
 	/*
 		There's actually a way to export a report with an export template
 		different than what it specifies. This is really only helpful when
@@ -68,25 +68,20 @@ func (r *Report) export(extension string, filename string, templateName string) 
 		return nil, fmt.Errorf("while calling export api: %w", err)
 	}
 
-	// check if filename already exists
-	if _, err := os.Stat(filename); !errors.Is(err, os.ErrNotExist) {
-		return nil, fmt.Errorf("%s already exists", filename)
-	}
-
-	err = os.WriteFile(filename, []byte(body), 0600)
+	_, err = writer.Write([]byte(body))
 	if err != nil {
-		return nil, fmt.Errorf("while writing file to disk: %w", err)
+		return nil, fmt.Errorf("while writing file: %w", err)
 	}
 
 	return nil, nil
 }
 
-func (r *Report) ExportDoc(filename string, templateName string) ([]error, error) {
-	return r.export("doc", filename, templateName)
+func (r *Report) ExportDoc(writer io.Writer, templateName string) ([]error, error) {
+	return r.ExportWriter("doc", writer, templateName)
 }
-func (r *Report) ExportPtrac(filename string) ([]error, error) {
-	return r.export("ptrac", filename, "")
+func (r *Report) ExportPtrac(writer io.Writer) ([]error, error) {
+	return r.ExportWriter("ptrac", writer, "")
 }
-func (r *Report) ExportMarkdown(filename string) ([]error, error) {
-	return r.export("md", filename, "")
+func (r *Report) ExportMarkdown(writer io.Writer) ([]error, error) {
+	return r.ExportWriter("md", writer, "")
 }

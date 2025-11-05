@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"os"
 	"slices"
 	"strings"
 
@@ -15,7 +16,13 @@ import (
 	"github.com/spf13/viper"
 )
 
-var allowedFormats = []string{"doc", "ptrac", "md"}
+const (
+	PTRAC    = "ptrac"
+	DOC      = "doc"
+	MARKDOWN = "md"
+)
+
+var allowedFormats = []string{DOC, PTRAC, MARKDOWN}
 
 func Cmd() *cobra.Command {
 	var cmd = &cobra.Command{
@@ -84,28 +91,61 @@ func cmdExport(cmd *cobra.Command, args []string) error {
 		"type", format,
 	)
 
-	switch format {
-	case "ptrac":
-		filename = strings.TrimSuffix(filename, ".ptrac")
-		filename += ".ptrac"
-		warnings, err = r.ExportPtrac(filename)
-	case "doc":
-		filename = strings.TrimSuffix(filename, ".docx")
-		filename += ".docx"
-		warnings, err = r.ExportDoc(filename, templateName)
-	case "md":
-		filename = strings.TrimSuffix(filename, ".md")
-		filename += ".md"
-		warnings, err = r.ExportMarkdown(filename)
-	default:
-		err = errors.New("unsupported export format")
+	if format != PTRAC && format != DOC && format != MARKDOWN {
+		return errors.New("unsupported export format")
+	}
+
+	if filename == "-" {
+		warnings, err = r.ExportWriter(format, os.Stdout, templateName)
+	} else {
+		switch format {
+		case PTRAC:
+			filename = strings.TrimSuffix(filename, ".ptrac")
+			filename += ".ptrac"
+		case DOC:
+			filename = strings.TrimSuffix(filename, ".docx")
+			filename += ".docx"
+		case MARKDOWN:
+			filename = strings.TrimSuffix(filename, ".md")
+			filename += ".md"
+		default:
+			err = errors.New("unsupported export format")
+		}
+
+		if err != nil {
+			return err
+		}
+
+		// check if filename already exists
+		// TODO check for force flag
+		if _, err := os.Stat(filename); !errors.Is(err, os.ErrNotExist) {
+			return fmt.Errorf("%s already exists", filename)
+		}
+
+		file, err := os.Create(filename) //nolint:gosec
+		if err != nil {
+			return fmt.Errorf("while writing file to disk: %w", err)
+		}
+
+		switch format {
+		case PTRAC:
+			warnings, err = r.ExportPtrac(file) //nolint:ineffassign,staticcheck,wastedassign
+		case DOC:
+			warnings, err = r.ExportDoc(file, templateName) //nolint:ineffassign,staticcheck,wastedassign
+		case MARKDOWN:
+			warnings, err = r.ExportMarkdown(file) //nolint:ineffassign,staticcheck,wastedassign
+		default:
+			err = errors.New("unsupported export format") //nolint:ineffassign,staticcheck,wastedassign
+		}
 	}
 
 	if err != nil {
 		return err
 	}
 
-	fmt.Printf("Exporting %q as %s to %s\n", r.Name, format, filename)
+	if filename != "-" {
+		fmt.Printf("Exporting %q as %s to %s\n", r.Name, format, filename)
+	}
 
 	for _, warning := range warnings {
 		slog.Warn("Warning while creating plextrac instance",

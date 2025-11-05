@@ -3,6 +3,7 @@
 package tags
 
 import (
+	"errors"
 	"fmt"
 	"log/slog"
 
@@ -43,6 +44,12 @@ func Cmd() *cobra.Command {
 		RunE: cmdTagsSet,
 	}
 	cmd.AddCommand(setCmd)
+	// Search subcommand
+	searchCmd := &cobra.Command{
+		Use:  "search",
+		RunE: cmdTagsSearch,
+	}
+	cmd.AddCommand(searchCmd)
 
 	return cmd
 }
@@ -145,6 +152,7 @@ func cmdTagsAdd(cmd *cobra.Command, args []string) error {
 
 	return err
 }
+
 func cmdTagsRemove(cmd *cobra.Command, args []string) error {
 	p, warnings, err := utils.NewPlextrac()
 	if err != nil {
@@ -178,6 +186,7 @@ func cmdTagsRemove(cmd *cobra.Command, args []string) error {
 
 	return err
 }
+
 func cmdTagsSet(cmd *cobra.Command, args []string) error {
 	p, warnings, err := utils.NewPlextrac()
 	if err != nil {
@@ -211,3 +220,58 @@ func cmdTagsSet(cmd *cobra.Command, args []string) error {
 
 	return err
 }
+
+func cmdTagsSearch(cmd *cobra.Command, args []string) error {
+	if len(args) != 1 {
+		return errors.New("must have exactly one tag")
+	}
+
+	tag := args[0]
+
+	p, warnings, err := utils.NewPlextrac()
+	if err != nil {
+		return err
+	}
+
+	for _, warning := range warnings {
+		slog.Warn("Warning while creating plextrac instance",
+			"warning", warning,
+		)
+	}
+
+	clients, err := p.Clients()
+	if err != nil {
+		return err
+	}
+	// TODO can this have a progress bar?
+	// TODO maybe count the number of reports a client has, then use that as the total value
+	for _, client := range clients {
+		for _, t := range client.Tags() {
+			if t == tag {
+				fmt.Printf("Found tag %s on client %q\n", tag, client.Name)
+			}
+		}
+
+		reports, _, _ := client.Reports()
+		for _, report := range reports {
+			for _, t := range report.Tags() {
+				if t == tag {
+					fmt.Printf("Found tag %s on report %q for client %q\n", tag, report.Name, client.Name)
+				}
+			}
+
+			findings, _, _ := report.Findings()
+			for _, finding := range findings {
+				for _, t := range finding.Tags() {
+					if t == tag {
+						fmt.Printf("Found tag %s on finding %q report %q for client %q\n", tag, finding.Name, report.Name, client.Name)
+					}
+				}
+			}
+		}
+	}
+	// TODO also search WriteupsDB
+	return nil
+}
+
+// TODO sync tags up from findings -> reports -> clients

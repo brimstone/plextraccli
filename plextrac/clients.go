@@ -177,8 +177,6 @@ func (c *Client) update() ([]error, error) {
 		return nil, fmt.Errorf("error updating client: %w", err)
 	}
 
-	fmt.Printf("body: %s\n", body)
-
 	return nil, nil
 }
 

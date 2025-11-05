@@ -153,7 +153,8 @@ func main() {
 
 		var reportNames []string
 		for _, r := range reports {
-			reportNames = append(reportNames, r.Name)
+			// TODO there's still something off here
+			reportNames = append(reportNames, strings.ReplaceAll(r.Name, " ", "\\ "))
 		}
 
 		sort.Strings(reportNames)

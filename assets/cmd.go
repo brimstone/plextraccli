@@ -110,25 +110,28 @@ func cmdAssetsAdd(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	_ = f
-
-	fmt.Printf("Got to add %#v\n", args)
+	var assets []string
 
 	if len(args) == 0 {
 		scanner := bufio.NewScanner(os.Stdin)
 		for scanner.Scan() {
-			asset := scanner.Text()
-			fmt.Printf("Adding %s\n", asset)
-
-			err = f.AddAsset(asset)
-			if err != nil {
-				return err
-			}
+			assets = append(assets, scanner.Text())
 		}
 
 		if scanner.Err() != nil {
-			return err
+			return scanner.Err()
 		}
+	} else {
+		fmt.Printf("Got to add %#v\n", args)
+
+		assets = append(assets, args...)
+	}
+
+	fmt.Printf("Adding %#v\n", assets)
+
+	err = f.AddAssetBulk(assets)
+	if err != nil {
+		return err
 	}
 
 	return nil

@@ -216,12 +216,10 @@ func getExpirationFromToken(token string) (time.Time, error) {
 	var jwt jwtPayload
 
 	payload := strings.Split(token, ".")[1]
-	// Fix the padding so it decodes correctly
-	payload += strings.Repeat("=", ((len(payload)/3)+1)*3-len(payload))
 
-	dst := make([]byte, base64.StdEncoding.DecodedLen(len(payload)))
+	dst := make([]byte, base64.RawURLEncoding.DecodedLen(len(payload)))
 
-	n, err := base64.StdEncoding.Decode(dst, []byte(payload))
+	n, err := base64.RawURLEncoding.Decode(dst, []byte(payload))
 	if err != nil {
 		return time.Time{}, fmt.Errorf("unable to decode jwt payload: %w", err)
 	}

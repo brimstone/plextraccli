@@ -14,7 +14,8 @@ import (
 	"github.com/spf13/viper"
 )
 
-var defaultCols = []string{"status", "startdate", "name"}
+var defaultCols = []string{"status", "startdate", "name", "operator"}
+var allCols = []string{"Status", "Start Date", "Stop Date", "Name", "Tags", "Operator"}
 
 func Cmd() *cobra.Command {
 	var cmd = &cobra.Command{
@@ -25,6 +26,13 @@ func Cmd() *cobra.Command {
 	}
 	// reportsCmd represents the reports command
 	cmd.PersistentFlags().String("cols", strings.Join(defaultCols, ","), "Columns to show")
+	// TODO copy this style to the rest of the cmds
+	err := cmd.RegisterFlagCompletionFunc("cols", func(cmd *cobra.Command, args []string, toComplete string) ([]cobra.Completion, cobra.ShellCompDirective) {
+		return utils.LowerCaseHeaders(allCols), 0
+	})
+	if err != nil {
+		panic(err)
+	}
 
 	return cmd
 }
@@ -60,21 +68,19 @@ func cmdReports(cmd *cobra.Command, args []string) error {
 
 	var rows [][]string
 	for _, r := range reports {
+		// Refer to allCols for order
 		rows = append(rows, []string{
 			r.Status,
 			r.StartDate.Format(time.DateOnly),
+			r.StopDate.Format(time.DateOnly),
 			r.Name,
 			strings.Join(r.Tags(), ","),
+			strings.Join(r.Operators(), ","),
 		})
 	}
 
 	utils.ShowTable(
-		[]string{
-			"Status",
-			"Start Date",
-			"Name",
-			"Tags",
-		},
+		allCols,
 		rows,
 		showCols,
 	)

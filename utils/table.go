@@ -67,6 +67,15 @@ func (m *tableModel) Render() string {
 	return baseStyle.Render(m.table.View())
 }
 
+func LowerCaseHeaders(h []string) []string {
+	var x []string
+	for _, s := range h {
+		x = append(x, strings.ToLower(strings.ReplaceAll(s, " ", "")))
+	}
+
+	return x
+}
+
 func ShowTable(headers []string, rows [][]string, showCols []string) {
 	var cols []TableColumn
 

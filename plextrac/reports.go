@@ -30,7 +30,7 @@ type Report struct {
 	StartDate        time.Time // 8
 	Status           string    // 3
 	StopDate         time.Time // 9
-	Operators        []string  // 5
+	operators        []string  // 5
 	Reviewers        []string  // 6
 	tags             []string  // 10
 
@@ -92,6 +92,13 @@ func (c *Client) Reports() ([]*Report, []error, error) {
 			c:  c,
 		}
 
+		// Name 1
+		if n, ok := r.Data[1].(string); ok {
+			report.Name = n
+		} else {
+			warnings = append(warnings, fmt.Errorf("%d: can't coerce data[1] to string for name", r.ID))
+		}
+
 		// CreatedAt 7
 		if c, ok := r.Data[7].(float64); ok {
 			report.CreatedAt = time.Unix(int64(c), 0).UTC()
@@ -115,13 +122,6 @@ func (c *Client) Reports() ([]*Report, []error, error) {
 			warnings = append(warnings, fmt.Errorf("%d: can't coerce data[12] into string for findingstemplate", r.ID))
 		}
 
-		// Name 1
-		if n, ok := r.Data[1].(string); ok {
-			report.Name = n
-		} else {
-			warnings = append(warnings, fmt.Errorf("%d: can't coerce data[1] to string for name", r.ID))
-		}
-
 		// ReportTemplate 11
 		if t, ok := r.Data[11].(string); ok {
 			report.ReportTemplate = t
@@ -134,10 +134,10 @@ func (c *Client) Reports() ([]*Report, []error, error) {
 			if t, err := time.Parse("2006-01-02T15:04:05.999Z", s); err == nil {
 				report.StartDate = t.UTC()
 			} else {
-				warnings = append(warnings, fmt.Errorf("%d: can't parse data[8] into date for StartDate: %#v", r.ID, r.Data[8]))
+				warnings = append(warnings, fmt.Errorf("%s: can't parse data[8] into date for StartDate: %#v", report.Name, r.Data[8]))
 			}
 		} else {
-			warnings = append(warnings, fmt.Errorf("%d: can't coerce data[8] into string for StartDate: %#v", r.ID, r.Data[8]))
+			warnings = append(warnings, fmt.Errorf("%s: can't coerce data[8] into string for StartDate: %#v", report.Name, r.Data[8]))
 		}
 		// Status 3
 		if s, ok := r.Data[3].(string); ok {
@@ -160,6 +160,17 @@ func (c *Client) Reports() ([]*Report, []error, error) {
 		}
 
 		// TODO Operators 5
+		if s, ok := r.Data[5].([]interface{}); ok {
+			for i, j := range s {
+				if o, ok := j.(string); ok {
+					report.operators = append(report.operators, o)
+				} else {
+					warnings = append(warnings, fmt.Errorf("can't coerce data[5][%d] into string for slice for Operators: %#v", i, r.Data[5]))
+				}
+			}
+		} else {
+			warnings = append(warnings, fmt.Errorf("can't coerce data[5] into string slice for Operator: %#v", r.Data[5]))
+		}
 
 		// TODO Reviewers 6
 
@@ -288,6 +299,10 @@ func (r *Report) update() ([]error, error) {
 	}
 
 	return nil, nil
+}
+
+func (r *Report) Operators() []string {
+	return r.operators
 }
 
 func (r *Report) Tags() []string {

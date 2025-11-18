@@ -3,6 +3,8 @@
 package plextrac
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -79,8 +81,41 @@ func (r *Report) ExportWriter(extension string, writer io.Writer, templateName s
 func (r *Report) ExportDoc(writer io.Writer, templateName string) ([]error, error) {
 	return r.ExportWriter("doc", writer, templateName)
 }
+
+// ExportPtrac exports the report in ptrac format to the provided writer.
+// It returns any warnings encountered during export and any errors that occurred.
+//
+// Parameters:
+//   - writer: io.Writer to which the ptrac formatted report will be written
+//
+// Returns:
+//   - warnings: slice of warning messages encountered during export
+//   - err: error if the export operation fails
 func (r *Report) ExportPtrac(writer io.Writer) ([]error, error) {
-	return r.ExportWriter("ptrac", writer, "")
+	// Export the report in ptrac format to a buffer
+	var buf bytes.Buffer
+
+	warnings, err := r.ExportWriter("ptrac", &buf, "")
+	if err != nil {
+		return warnings, err
+	}
+
+	// Parse the buffer as JSON
+	var jsonData interface{}
+	if err := json.Unmarshal(buf.Bytes(), &jsonData); err != nil {
+		return warnings, fmt.Errorf("failed to parse ptrac data as JSON: %w", err)
+	}
+
+	// Write the JSON data to the provided writer with indentation
+	encoder := json.NewEncoder(writer)
+	encoder.SetIndent("", "  ")
+	encoder.SetEscapeHTML(false)
+
+	if err := encoder.Encode(jsonData); err != nil {
+		return warnings, fmt.Errorf("failed to write ptrac data to writer: %w", err)
+	}
+
+	return warnings, nil
 }
 func (r *Report) ExportMarkdown(writer io.Writer) ([]error, error) {
 	return r.ExportWriter("md", writer, "")

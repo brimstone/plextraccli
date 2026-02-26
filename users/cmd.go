@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Matt Robinson brimstone@the.narro.ws
+// Copyright (c) 2026 Matt Robinson brimstone@the.narro.ws
 
 package users
 

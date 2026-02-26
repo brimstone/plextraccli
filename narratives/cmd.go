@@ -1,6 +1,6 @@
 // Copyright (c) 2025 Matt Robinson brimstone@the.narro.ws
 
-package narrative
+package narratives
 
 import (
 	"errors"
@@ -23,8 +23,8 @@ var formats = []string{
 
 func Cmd() *cobra.Command {
 	var cmd = &cobra.Command{
-		Use:   "narrative",
-		Short: "Manage narratives in report",
+		Use:   "narratives",
+		Short: "Manage narratives in a report",
 		Long:  `Manage narratives in a report.`,
 		RunE:  cmdNarrative,
 	}
@@ -110,14 +110,21 @@ func cmdNarrative(cmd *cobra.Command, args []string) error {
 			switch contentType {
 			case "html":
 				fmt.Printf("%s\n", content)
-			case "txt":
+			case "md":
 				content = strings.ReplaceAll(content, "<p>", "\n")
 				content = strings.ReplaceAll(content, "</p>", "\n")
 				content = regexp.MustCompile(`<figure.*?figure>`).ReplaceAllString(content, "")
+				content = strings.ReplaceAll(content, "<li>", "- ")
+				content = strings.ReplaceAll(content, "</li>", "\n")
+				content = strings.ReplaceAll(content, "<h1>", "# ")
+				content = strings.ReplaceAll(content, "<h2>", "## ")
+				content = strings.ReplaceAll(content, "<h3>", "### ")
+				content = strings.ReplaceAll(content, "<h4>", "#### ")
+				content = regexp.MustCompile(`<[^>]*>`).ReplaceAllString(content, "")
 				content = strings.ReplaceAll(content, "&nbsp;", " ")
+				content = strings.ReplaceAll(content, "&lt;", "<")
+				content = strings.ReplaceAll(content, "&gt;", ">")
 				fmt.Printf("%s\n", content)
-			case "md":
-				fmt.Printf("md\n")
 			default:
 				fmt.Printf("unsupported content type: %s", contentType)
 			}

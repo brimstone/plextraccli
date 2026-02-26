@@ -22,6 +22,7 @@ import (
 	"github.com/brimstone/plextraccli/update"
 	"github.com/brimstone/plextraccli/users"
 	"github.com/brimstone/plextraccli/utils"
+	"github.com/brimstone/plextraccli/writeups"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -184,6 +185,7 @@ func main() {
 	rootCmd.AddCommand(tags.Cmd())
 	rootCmd.AddCommand(update.Cmd())
 	rootCmd.AddCommand(users.Cmd())
+	rootCmd.AddCommand(writeups.Cmd())
 
 	cobra.OnInitialize(initConfig)
 

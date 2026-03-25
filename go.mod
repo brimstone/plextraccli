@@ -5,17 +5,20 @@ go 1.24.2
 toolchain go1.24.4
 
 require (
+	github.com/JohannesKaufmann/html-to-markdown/v2 v2.4.0
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/charmbracelet/bubbles v0.21.0
 	github.com/charmbracelet/lipgloss v1.1.0
 	github.com/mattn/go-isatty v0.0.20
 	github.com/pquerna/otp v1.5.0
 	github.com/rhysd/go-github-selfupdate v1.2.3
+	github.com/russross/blackfriday/v2 v2.1.0
 	github.com/spf13/cobra v1.10.1
 	github.com/spf13/viper v1.21.0
 )
 
 require (
+	github.com/JohannesKaufmann/dom v0.2.0 // indirect
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
 	github.com/boombuler/barcode v1.1.0 // indirect
 	github.com/charmbracelet/bubbletea v1.3.10 // indirect
@@ -52,6 +55,7 @@ require (
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	golang.org/x/crypto v0.45.0 // indirect
 	golang.org/x/exp v0.0.0-20250305212735-054e65f0b394 // indirect
+	golang.org/x/net v0.45.0 // indirect
 	golang.org/x/oauth2 v0.32.0 // indirect
 	golang.org/x/sys v0.38.0 // indirect
 	golang.org/x/text v0.31.0 // indirect

@@ -6,9 +6,9 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
-	"regexp"
 	"strings"
 
+	htmltomarkdown "github.com/JohannesKaufmann/html-to-markdown/v2"
 	"github.com/brimstone/plextraccli/utils"
 
 	"github.com/spf13/cobra"
@@ -16,7 +16,6 @@ import (
 )
 
 var formats = []string{
-	"txt",
 	"html",
 	"md",
 }
@@ -111,20 +110,12 @@ func cmdNarrative(cmd *cobra.Command, args []string) error {
 			case "html":
 				fmt.Printf("%s\n", content)
 			case "md":
-				content = strings.ReplaceAll(content, "<p>", "\n")
-				content = strings.ReplaceAll(content, "</p>", "\n")
-				content = regexp.MustCompile(`<figure.*?figure>`).ReplaceAllString(content, "")
-				content = strings.ReplaceAll(content, "<li>", "- ")
-				content = strings.ReplaceAll(content, "</li>", "\n")
-				content = strings.ReplaceAll(content, "<h1>", "# ")
-				content = strings.ReplaceAll(content, "<h2>", "## ")
-				content = strings.ReplaceAll(content, "<h3>", "### ")
-				content = strings.ReplaceAll(content, "<h4>", "#### ")
-				content = regexp.MustCompile(`<[^>]*>`).ReplaceAllString(content, "")
-				content = strings.ReplaceAll(content, "&nbsp;", " ")
-				content = strings.ReplaceAll(content, "&lt;", "<")
-				content = strings.ReplaceAll(content, "&gt;", ">")
-				fmt.Printf("%s\n", content)
+				md, err := htmltomarkdown.ConvertString(content)
+				if err != nil {
+					return err
+				}
+
+				fmt.Printf("%s\n", md)
 			default:
 				fmt.Printf("unsupported content type: %s", contentType)
 			}

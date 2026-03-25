@@ -209,6 +209,7 @@ func initConfig() {
 		)
 	}
 
+	// TODO use github.com/zalando/go-keyring to store the authtoken and creds instead
 	if utils.SaveConfigFile == "" && (viper.GetString("password") != "" || viper.GetString("authtoken") != "") {
 		utils.SaveConfigFile = viper.ConfigFileUsed()
 	}

@@ -153,6 +153,8 @@ func lintFindings(findings []*plextrac.Finding) []error {
 		// TODO check for heading 3, 2 and 1 cuz those look bad
 		// TODO check that there is at least one tag set
 		// TODO check that the report has those tags too
+		// TODO check the finding is published
+		// TODO check that the finding has a description
 		assets, warnings, err := f.Assets()
 		if err != nil {
 			return []error{err}

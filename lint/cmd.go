@@ -17,6 +17,8 @@ import (
 	"github.com/spf13/viper"
 )
 
+var toolNames = []string{"MitM6", "NTLMRelayX", "Certipy", "NetExec"}
+
 func Cmd() *cobra.Command {
 	var cmd = &cobra.Command{
 		Use:   "lint",
@@ -134,7 +136,7 @@ func lintReport(report *plextrac.Report) []error {
 			errs = append(errs, fmt.Errorf("narrative %s has at least one caption ending with a period", s.Title))
 		}
 
-		for _, err := range checkCapitalization(s.Content, []string{"MitM6", "NTLMRelayx"}) {
+		for _, err := range checkCapitalization(s.Content, toolNames) {
 			errs = append(errs, fmt.Errorf("narrative %q has a misspelling: %w", s.Title, err))
 		}
 	}
@@ -183,8 +185,12 @@ func lintFindings(findings []*plextrac.Finding) []error {
 			errs = append(errs, fmt.Errorf("finding %q has at least one caption ending with a period", f.Name))
 		}
 
-		for _, err := range checkCapitalization(f.Evidence, []string{"MitM6", "NTLMRelayx", "Certipy"}) {
+		for _, err := range checkCapitalization(f.Evidence, toolNames) {
 			errs = append(errs, fmt.Errorf("finding %q has a misspelling: %w", f.Name, err))
+		}
+
+		if !f.Published {
+			errs = append(errs, fmt.Errorf("finding %q is not published", f.Name))
 		}
 	}
 
@@ -208,7 +214,7 @@ func checkCapitalization(content string, words []string) []error {
 		for _, match := range regex.FindStringSubmatch(content) {
 			// Check if the exact (original) case of the word is present
 			if match != word {
-				errs = append(errs, fmt.Errorf("%q has the wrong case", match))
+				errs = append(errs, fmt.Errorf("%q has the wrong case", word))
 			}
 		}
 	}

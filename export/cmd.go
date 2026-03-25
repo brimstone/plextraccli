@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"os"
 	"slices"
+	"strconv"
 	"strings"
 
 	"github.com/brimstone/plextraccli/utils"
@@ -33,7 +34,7 @@ func Cmd() *cobra.Command {
 	}
 
 	cmd.PersistentFlags().StringP("type", "t", allowedFormats[0], "Format type. One of: "+strings.Join(allowedFormats, ",")+".")
-	cmd.PersistentFlags().StringP("out", "o", "", "Output file (default: name of report)")
+	cmd.PersistentFlags().StringP("out", "o", "", "Output file (default: name of report, - for stdout)")
 	cmd.PersistentFlags().StringP("template", "", "", "Export Template name to use (default: template specified in report template)")
 
 	return cmd
@@ -69,9 +70,27 @@ func cmdExport(cmd *cobra.Command, args []string) error {
 		return errors.New("must specify a report")
 	}
 
+	slog.Debug("Checking for report by partial name",
+		"name", reportPartial,
+	)
+
 	r, warnings2, err := c.ReportByPartial(reportPartial)
 	if err != nil {
-		return err
+		err1 := err
+		i, err2 := strconv.ParseInt(reportPartial, 10, 64)
+		slog.Debug("Checking for report by id",
+			"id", reportPartial,
+			"err2", err2,
+		)
+
+		if err2 != nil {
+			return err1
+		}
+
+		r, warnings2, err = c.ReportByID(i)
+		if err != nil {
+			return err1
+		}
 	}
 
 	warnings = append(warnings, warnings2...)

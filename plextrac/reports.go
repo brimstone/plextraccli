@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"slices"
 	"strings"
@@ -196,7 +197,10 @@ func (c *Client) Reports() ([]*Report, []error, error) {
 func (c *Client) ReportByPartial(partial string) (*Report, []error, error) {
 	reports, warnings, err := c.Reports()
 
-	var match *Report
+	var (
+		match      *Report
+		exactMatch *Report
+	)
 
 	if err != nil {
 		return match, warnings, err
@@ -205,7 +209,13 @@ func (c *Client) ReportByPartial(partial string) (*Report, []error, error) {
 	matches := 0
 
 	for _, r := range reports {
+		slog.Debug("Found a match by name",
+			"partial", partial,
+			"name", r.Name,
+		)
+
 		if partial == r.Name {
+			exactMatch = r
 			match = r
 			matches = 1
 
@@ -223,7 +233,36 @@ func (c *Client) ReportByPartial(partial string) (*Report, []error, error) {
 	}
 
 	if matches > 1 {
+		if exactMatch != nil {
+			return exactMatch, warnings, nil
+		}
+
 		return nil, warnings, errors.New("multiple reports match")
+	}
+
+	return match, warnings, nil
+}
+
+func (c *Client) ReportByID(id int64) (*Report, []error, error) {
+	reports, warnings, err := c.Reports()
+
+	var match *Report
+
+	if err != nil {
+		return match, warnings, err
+	}
+
+	for _, r := range reports {
+		slog.Debug("Checking for match",
+			"id1", id,
+			"id2", r.ID,
+		)
+
+		if id == r.ID {
+			match = r
+
+			break
+		}
 	}
 
 	return match, warnings, nil

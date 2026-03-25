@@ -5,6 +5,7 @@ package reports
 import (
 	"errors"
 	"log/slog"
+	"strconv"
 	"strings"
 	"time"
 
@@ -15,7 +16,7 @@ import (
 )
 
 var defaultCols = []string{"status", "startdate", "name", "operator"}
-var allCols = []string{"Status", "Start Date", "Stop Date", "Name", "Tags", "Operator"}
+var allCols = []string{"Status", "Start Date", "Stop Date", "Name", "Tags", "Operator", "ID"}
 
 func Cmd() *cobra.Command {
 	var cmd = &cobra.Command{
@@ -76,6 +77,7 @@ func cmdReports(cmd *cobra.Command, args []string) error {
 			r.Name,
 			strings.Join(r.Tags(), ","),
 			strings.Join(r.Operators(), ","),
+			strconv.FormatInt(r.ID, 10),
 		})
 	}
 

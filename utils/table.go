@@ -76,57 +76,59 @@ func LowerCaseHeaders(h []string) []string {
 	return x
 }
 
+func transposeMatrix(matrix [][]string) [][]string {
+	// stolen from https://codesignal.com/learn/courses/multidimensional-arrays-and-their-traversal-in-go/lessons/transposing-matrices-in-go-a-hands-on-tutorial
+	rows := len(matrix)
+	cols := len(matrix[0])
+
+	result := make([][]string, cols)
+	for i := range result {
+		result[i] = make([]string, rows)
+	}
+
+	for i := range rows {
+		for j := range cols {
+			result[j][i] = matrix[i][j]
+		}
+	}
+
+	return result
+}
+
 func ShowTable(headers []string, rows [][]string, showCols []string) {
-	var cols []TableColumn
+	transposeCols := transposeMatrix(rows)
 
-	var keepCol []bool
+	var toShowMatrix [][]string
 
-	for _, h := range headers {
-		h2 := strings.ToLower(strings.ReplaceAll(h, " ", ""))
+	var toShowHeaders []TableColumn
 
-		var i int
+	// Determine which columns need to be shown
+	for _, c := range showCols {
+		foundColumn := false
 
-		// remove the value from showCols
-		var c string
-		for i, c = range showCols {
-			if c == h2 {
-				showCols = append(showCols[:i], showCols[i+1:]...)
+		for i, h := range headers {
+			h2 := strings.ToLower(strings.ReplaceAll(h, " ", ""))
+			// This column needs to be shown
+			if h2 == c {
+				foundColumn = true
 
-				break
+				toShowMatrix = append(toShowMatrix, transposeCols[i])
+				toShowHeaders = append(toShowHeaders, TableColumn{Title: h})
 			}
 		}
 
-		if c == h2 { // still
-			cols = append(cols, TableColumn{Title: h})
-			keepCol = append(keepCol, true)
-		} else {
-			keepCol = append(keepCol, false)
+		if !foundColumn {
+			fmt.Printf("unsupported column: %s\n", c)
+
+			return
 		}
 	}
-	// check to see if showCols still has a value, if it does, error with unsupported column
-	if len(showCols) > 0 {
-		fmt.Printf("unsupported column: %s\n", showCols[0])
 
-		return
-	}
-
-	var showRows [][]string
-
-	for _, r := range rows {
-		var r3 []string
-
-		for c, r2 := range r {
-			if keepCol[c] {
-				r3 = append(r3, r2)
-			}
-		}
-
-		showRows = append(showRows, r3)
-	}
+	showRows := transposeMatrix(toShowMatrix)
 
 	if isatty.IsTerminal(os.Stdout.Fd()) {
 		t := NewTable()
-		t.SetColumns(cols)
+		t.SetColumns(toShowHeaders)
 
 		for _, r := range showRows {
 			t.AddRow(r)

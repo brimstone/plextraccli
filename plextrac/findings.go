@@ -14,7 +14,7 @@ type Finding struct {
 	r      *Report
 	assets []Asset
 	full   bool
-	raw    map[string]interface{}
+	raw    map[string]any
 
 	ID        int
 	Status    string
@@ -135,18 +135,18 @@ func (r *Report) FindingByPartial(partial string) (*Finding, error) {
 	return match, nil
 }
 
-func findingAssets(m map[string]interface{}) ([]Asset, []error, error) {
+func findingAssets(m map[string]any) ([]Asset, []error, error) {
 	var assets []Asset
 
 	var warnings []error
 
-	affected_assets, ok := m["affected_assets"].(map[string]interface{})
+	affected_assets, ok := m["affected_assets"].(map[string]any)
 	if !ok {
 		return assets, warnings, errors.New("unable to coerce affected_assets into map[string]interface{}")
 	}
 
 	for k, asset := range affected_assets {
-		asset_map, ok := asset.(map[string]interface{})
+		asset_map, ok := asset.(map[string]any)
 		if !ok {
 			return assets, warnings, errors.New("unable to coerce asset into map[string]interface{}")
 		}
@@ -167,8 +167,8 @@ func findingAssets(m map[string]interface{}) ([]Asset, []error, error) {
 	return assets, warnings, nil
 }
 
-func findingEvidence(m map[string]interface{}) (string, []error, error) {
-	fields, ok := m["fields"].(map[string]interface{})
+func findingEvidence(m map[string]any) (string, []error, error) {
+	fields, ok := m["fields"].(map[string]any)
 	if !ok {
 		return "", nil, errors.New("unable to coerce fields into map[string]interface{}")
 	}
@@ -178,7 +178,7 @@ func findingEvidence(m map[string]interface{}) (string, []error, error) {
 		return "", []error{errors.New("evidence is missing")}, nil
 	}
 
-	evidence, ok := fields["evidence"].(map[string]interface{})
+	evidence, ok := fields["evidence"].(map[string]any)
 	if !ok {
 		return "", nil, errors.New("unable to coerce evidence into map[string]interface{}")
 	}
@@ -229,7 +229,7 @@ func (f *Finding) EnsureFull() ([]error, error) {
 	warnings = append(warnings, warningsParsed...)
 
 	// Parse Tags
-	if tags, ok := f.raw["tags"].([]interface{}); ok {
+	if tags, ok := f.raw["tags"].([]any); ok {
 		for _, t := range tags {
 			if tag, ok := t.(string); ok {
 				f.tags = append(f.tags, tag)
@@ -242,19 +242,6 @@ func (f *Finding) EnsureFull() ([]error, error) {
 	}
 
 	return warnings, nil
-}
-
-func (f *Finding) update() ([]error, error) {
-	path := fmt.Sprintf("v1/client/%d/report/%d/flaw/%d", f.r.c.ID, f.r.ID, f.ID)
-
-	body, err := f.r.ua.apiCall(http.MethodPut, path, f.raw, nil)
-	if err != nil {
-		fmt.Printf("body: %s\n", body)
-
-		return nil, fmt.Errorf("error updating finding: %w", err)
-	}
-
-	return nil, nil
 }
 
 func (f *Finding) Tags() []string {
@@ -306,4 +293,16 @@ func (f *Finding) SetTags(tags []string) ([]error, error) {
 	warnings = append(warnings, warnings2...)
 
 	return warnings, err
+}
+func (f *Finding) update() ([]error, error) {
+	path := fmt.Sprintf("v1/client/%d/report/%d/flaw/%d", f.r.c.ID, f.r.ID, f.ID)
+
+	body, err := f.r.ua.apiCall(http.MethodPut, path, f.raw, nil)
+	if err != nil {
+		fmt.Printf("body: %s\n", body)
+
+		return nil, fmt.Errorf("error updating finding: %w", err)
+	}
+
+	return nil, nil
 }

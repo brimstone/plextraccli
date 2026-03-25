@@ -23,6 +23,7 @@ linters:
   - unparam
   - varnamelen
   - wrapcheck
+  - wsl
   settings:
     goheader:
       template-path: header.tmpl

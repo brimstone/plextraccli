@@ -137,7 +137,8 @@ func cmdExport(cmd *cobra.Command, args []string) error {
 
 		// check if filename already exists
 		// TODO check for force flag
-		if _, err := os.Stat(filename); !errors.Is(err, os.ErrNotExist) {
+		_, err = os.Stat(filename)
+		if !errors.Is(err, os.ErrNotExist) {
 			return fmt.Errorf("%s already exists", filename)
 		}
 

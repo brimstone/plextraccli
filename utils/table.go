@@ -24,6 +24,7 @@ type tableModel struct {
 
 func NewTable() tableModel {
 	var t tableModel
+
 	t.table = table.New()
 
 	s := table.DefaultStyles()

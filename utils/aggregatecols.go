@@ -13,7 +13,7 @@ import (
 // eg: status,startdate,name and "name" show name
 func AggregateCols(def []string, modify string) []string {
 	if modify[0] == '+' {
-		for _, c := range strings.Split(modify[1:], ",") {
+		for c := range strings.SplitSeq(modify[1:], ",") {
 			if !slices.Contains(def, c) {
 				def = append(def, c)
 			}

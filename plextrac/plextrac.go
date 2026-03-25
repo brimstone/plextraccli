@@ -117,7 +117,8 @@ func (ua *UserAgent) Login(u, p, token, seed string) ([]error, error) {
 		Message    string `json:"message"`
 	}
 
-	authPayloadBytes, err := json.Marshal(authPayload)
+	// Password is needed here because that's how logins work
+	authPayloadBytes, err := json.Marshal(authPayload) //nolint:gosec
 	if err != nil {
 		return warnings, err
 	}
@@ -195,7 +196,6 @@ func (ua *UserAgent) Login(u, p, token, seed string) ([]error, error) {
 	ua.authToken = authResponse.Token
 
 	ua.expires, err = getExpirationFromToken(ua.authToken)
-
 	if err != nil {
 		return warnings, fmt.Errorf("unable to extract expiration from token: %w", err)
 	}
@@ -293,7 +293,6 @@ func (ua *UserAgent) checkExpired() ([]error, error) {
 	}
 
 	err = json.Unmarshal(body, &response)
-
 	if err != nil {
 		warnings = append(warnings, fmt.Errorf("unable to refresh token: %w", err))
 
@@ -324,7 +323,7 @@ func (ua *UserAgent) checkExpired() ([]error, error) {
 	return warnings, err
 }
 
-func (ua *UserAgent) apiGet(path string, response interface{}) (string, error) {
+func (ua *UserAgent) apiGet(path string, response any) (string, error) {
 	_, err := ua.checkExpired()
 	if err != nil {
 		return "", err
@@ -377,7 +376,7 @@ func (ua *UserAgent) apiGet(path string, response interface{}) (string, error) {
 	return string(body), err
 }
 
-func (ua *UserAgent) apiCall(method, path string, body interface{}, response interface{}) (string, error) {
+func (ua *UserAgent) apiCall(method, path string, body any, response any) (string, error) {
 	_, err := ua.checkExpired()
 	if err != nil {
 		return "", err
@@ -423,7 +422,8 @@ func (ua *UserAgent) apiCall(method, path string, body interface{}, response int
 }
 
 func must(f func() error) {
-	if err := f(); err != nil {
+	err := f()
+	if err != nil {
 		panic(err)
 	}
 }

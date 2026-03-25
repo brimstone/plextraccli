@@ -15,7 +15,8 @@ func StdinToStringSlice() ([]string, error) {
 		ret = append(ret, scanner.Text())
 	}
 
-	if err := scanner.Err(); err != nil {
+	err := scanner.Err()
+	if err != nil {
 		return nil, err
 	}
 

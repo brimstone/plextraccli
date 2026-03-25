@@ -21,24 +21,24 @@ type User struct {
 }
 type userResponse struct {
 	Data struct {
-		ActivatedAt            int64         `json:"activatedAt"`
-		AuthenticationProvider string        `json:"authentication_provider"`
-		CreatedAt              int64         `json:"createdAt"`
-		Cuid                   string        `json:"cuid"`
-		DateFormat             string        `json:"dateFormat"`
-		DefaultGroup           bool          `json:"default_group"`
-		Disabled               bool          `json:"disabled"`
-		DocType                string        `json:"doc_type"`
-		Email                  string        `json:"email"`
-		FailedLogins           int64         `json:"failedLogins"`
-		First                  string        `json:"first"`
-		FullName               string        `json:"fullName"`
-		IsPaidUser             bool          `json:"isPaidUser"`
-		Language               string        `json:"language"`
-		Last                   string        `json:"last"`
-		LastFailedLogin        int64         `json:"lastFailedLogin"`
-		LastLogin              int64         `json:"lastLogin"`
-		LicenseKeys            []interface{} `json:"licenseKeys"`
+		ActivatedAt            int64  `json:"activatedAt"`
+		AuthenticationProvider string `json:"authentication_provider"`
+		CreatedAt              int64  `json:"createdAt"`
+		Cuid                   string `json:"cuid"`
+		DateFormat             string `json:"dateFormat"`
+		DefaultGroup           bool   `json:"default_group"`
+		Disabled               bool   `json:"disabled"`
+		DocType                string `json:"doc_type"`
+		Email                  string `json:"email"`
+		FailedLogins           int64  `json:"failedLogins"`
+		First                  string `json:"first"`
+		FullName               string `json:"fullName"`
+		IsPaidUser             bool   `json:"isPaidUser"`
+		Language               string `json:"language"`
+		Last                   string `json:"last"`
+		LastFailedLogin        int64  `json:"lastFailedLogin"`
+		LastLogin              int64  `json:"lastLogin"`
+		LicenseKeys            []any  `json:"licenseKeys"`
 		Name                   struct {
 			First string `json:"first"`
 			Last  string `json:"last"`
@@ -65,7 +65,9 @@ func (ua *UserAgent) Users() ([]*User, error) {
 
 	for _, u := range userResp {
 		user := &User{}
-		if s, err := strconv.Atoi(u.ID); err == nil {
+
+		s, err := strconv.Atoi(u.ID)
+		if err == nil {
 			user.ID = int64(s)
 		}
 

@@ -20,7 +20,7 @@ type Report struct {
 	full       bool
 	sections   []Section
 	templateID string
-	raw        map[string]interface{}
+	raw        map[string]any
 
 	ID               int64
 	CreatedAt        time.Time // 7
@@ -38,9 +38,9 @@ type Report struct {
 }
 
 type reportResponse struct {
-	ID    int64         `json:"id"`
-	DocID []int64       `json:"doc_id"`
-	Data  []interface{} `json:"data"`
+	ID    int64   `json:"id"`
+	DocID []int64 `json:"doc_id"`
+	Data  []any   `json:"data"`
 	// 0: int64 ID
 	// 1: string Name of report
 	// 2: null
@@ -132,7 +132,8 @@ func (c *Client) Reports() ([]*Report, []error, error) {
 
 		// StartDate 8
 		if s, ok := r.Data[8].(string); ok {
-			if t, err := time.Parse("2006-01-02T15:04:05.999Z", s); err == nil {
+			t, err := time.Parse("2006-01-02T15:04:05.999Z", s)
+			if err == nil {
 				report.StartDate = t.UTC()
 			} else {
 				warnings = append(warnings, fmt.Errorf("%s: can't parse data[8] into date for StartDate: %#v", report.Name, r.Data[8]))
@@ -150,7 +151,8 @@ func (c *Client) Reports() ([]*Report, []error, error) {
 		// StopDate 9
 		if r.Data[9] != nil {
 			if s, ok := r.Data[9].(string); ok {
-				if t, err := time.Parse("2006-01-02T15:04:05.999Z", s); err == nil {
+				t, err := time.Parse("2006-01-02T15:04:05.999Z", s)
+				if err == nil {
 					report.StopDate = t.UTC()
 				} else {
 					warnings = append(warnings, fmt.Errorf("%d: can't parse data[9] into date for StopDate: %#v", r.ID, r.Data[9]))
@@ -161,7 +163,7 @@ func (c *Client) Reports() ([]*Report, []error, error) {
 		}
 
 		// TODO Operators 5
-		if s, ok := r.Data[5].([]interface{}); ok {
+		if s, ok := r.Data[5].([]any); ok {
 			for i, j := range s {
 				if o, ok := j.(string); ok {
 					report.operators = append(report.operators, o)
@@ -176,7 +178,7 @@ func (c *Client) Reports() ([]*Report, []error, error) {
 		// TODO Reviewers 6
 
 		// TODO Tags 10
-		if s, ok := r.Data[10].([]interface{}); ok {
+		if s, ok := r.Data[10].([]any); ok {
 			for i, j := range s {
 				if t, ok := j.(string); ok {
 					report.tags = append(report.tags, t)
@@ -278,7 +280,6 @@ func (r *Report) EnsureFull() ([]error, error) {
 	var reportResp fullReportResponse
 
 	_, err := r.c.ua.apiGet(fmt.Sprintf("v1/client/%d/report/%d", r.c.ID, r.ID), &r.raw)
-
 	if err != nil {
 		return nil, fmt.Errorf("unable to get reports: %w", err)
 	}
@@ -327,19 +328,6 @@ func (r *Report) GetTemplateID() (string, []error, error) {
 	return r.templateID, warnings, err
 }
 
-func (r *Report) update() ([]error, error) {
-	path := fmt.Sprintf("v1/client/%d/report/%d", r.c.ID, r.ID)
-
-	body, err := r.ua.apiCall(http.MethodPut, path, r.raw, nil)
-	if err != nil {
-		fmt.Printf("body: %s\n", body)
-
-		return nil, fmt.Errorf("error updating report: %w", err)
-	}
-
-	return nil, nil
-}
-
 func (r *Report) Operators() []string {
 	return r.operators
 }
@@ -383,4 +371,16 @@ func (r *Report) SetTags(tags []string) ([]error, error) {
 	r.raw["tags"] = r.tags
 
 	return r.update()
+}
+func (r *Report) update() ([]error, error) {
+	path := fmt.Sprintf("v1/client/%d/report/%d", r.c.ID, r.ID)
+
+	body, err := r.ua.apiCall(http.MethodPut, path, r.raw, nil)
+	if err != nil {
+		fmt.Printf("body: %s\n", body)
+
+		return nil, fmt.Errorf("error updating report: %w", err)
+	}
+
+	return nil, nil
 }

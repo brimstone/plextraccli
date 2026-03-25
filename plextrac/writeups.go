@@ -93,19 +93,19 @@ type Writeup struct {
 
 type writeupRepositoriesResponse struct {
 	Data []struct {
-		Abbreviation    string        `json:"abbreviation"`
-		CreatedAt       int64         `json:"createdAt"`
-		CreatedBy       interface{}   `json:"createdBy"`
-		Description     string        `json:"description"`
-		DocType         string        `json:"doc_type"`
-		IsDeleted       bool          `json:"isDeleted"`
-		Name            string        `json:"name"`
-		RepositoryID    string        `json:"repositoryId"`
-		RepositoryType  string        `json:"repositoryType"`
-		RepositoryUsers []interface{} `json:"repositoryUsers"`
-		TenantID        int64         `json:"tenantId"`
-		UpdatedAt       int64         `json:"updatedAt"`
-		WriteupsCount   int64         `json:"writeupsCount"`
+		Abbreviation    string `json:"abbreviation"`
+		CreatedAt       int64  `json:"createdAt"`
+		CreatedBy       any    `json:"createdBy"`
+		Description     string `json:"description"`
+		DocType         string `json:"doc_type"`
+		IsDeleted       bool   `json:"isDeleted"`
+		Name            string `json:"name"`
+		RepositoryID    string `json:"repositoryId"`
+		RepositoryType  string `json:"repositoryType"`
+		RepositoryUsers []any  `json:"repositoryUsers"`
+		TenantID        int64  `json:"tenantId"`
+		UpdatedAt       int64  `json:"updatedAt"`
+		WriteupsCount   int64  `json:"writeupsCount"`
 	} `json:"data"`
 	Status string `json:"status"`
 }
@@ -115,8 +115,8 @@ type writeupsResponse struct {
 	Status string    `json:"status"`
 }
 
-// TODO filter by repository.
 func (ua *UserAgent) Writeups() ([]*Writeup, error) {
+	// TODO filter by repository.
 	var writeups []*Writeup
 
 	var writeupsRepositoriesResp writeupRepositoriesResponse

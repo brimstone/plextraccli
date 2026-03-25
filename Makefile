@@ -10,11 +10,11 @@ test: plextraccli
 
 .PHONY: lint
 lint: plextraccli
-	go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.0.2 run
+	go tool golangci-lint run
 
 .PHONY: lint-fix
 lint-fix: plextraccli
-	go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.0.2 run --fix
+	go tool golangci-lint run --fix
 
 .PHONY: watch
 watch:
@@ -28,7 +28,7 @@ watch:
 
 .PHONY: pre-commit
 pre-commit: plextraccli
-	go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.0.2 run --disable godox
+	go tool golangci-lint run --disable godox
 
 .PHONY: release
 release:

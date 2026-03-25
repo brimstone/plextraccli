@@ -14,7 +14,7 @@ type Client struct {
 	ua   *UserAgent
 	tags []string
 	full bool
-	raw  map[string]interface{}
+	raw  map[string]any
 
 	ID       int64
 	Name     string
@@ -75,6 +75,7 @@ func (ua *UserAgent) Clients() ([]*Client, error) {
 	var clientResp clientResponse
 
 	var clientsReq clientsRequest
+
 	clientsReq.Pagination.Limit = 1000
 	clientsReq.Sort = []clientsRequestSort{
 		{
@@ -87,7 +88,6 @@ func (ua *UserAgent) Clients() ([]*Client, error) {
 	// TODO handle pagination
 
 	_, err := ua.apiCall(http.MethodPost, "v2/clients", clientsReq, &clientResp)
-
 	if err != nil {
 		// handle err
 		return nil, err
@@ -167,19 +167,6 @@ func (c *Client) EnsureFull() ([]error, error) {
 	return nil, nil
 }
 
-func (c *Client) update() ([]error, error) {
-	path := fmt.Sprintf("v1/client/%d", c.ID)
-
-	body, err := c.ua.apiCall(http.MethodPut, path, c.raw, nil)
-	if err != nil {
-		fmt.Printf("body: %s\n", body)
-
-		return nil, fmt.Errorf("error updating client: %w", err)
-	}
-
-	return nil, nil
-}
-
 func (c *Client) Tags() []string {
 	return c.tags
 }
@@ -224,4 +211,16 @@ func (c *Client) SetTags(tags []string) ([]error, error) {
 	warnings = append(warnings, warnings2...)
 
 	return warnings, err
+}
+func (c *Client) update() ([]error, error) {
+	path := fmt.Sprintf("v1/client/%d", c.ID)
+
+	body, err := c.ua.apiCall(http.MethodPut, path, c.raw, nil)
+	if err != nil {
+		fmt.Printf("body: %s\n", body)
+
+		return nil, fmt.Errorf("error updating client: %w", err)
+	}
+
+	return nil, nil
 }

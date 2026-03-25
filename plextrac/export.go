@@ -101,8 +101,10 @@ func (r *Report) ExportPtrac(writer io.Writer) ([]error, error) {
 	}
 
 	// Parse the buffer as JSON
-	var jsonData interface{}
-	if err := json.Unmarshal(buf.Bytes(), &jsonData); err != nil {
+	var jsonData any
+
+	err = json.Unmarshal(buf.Bytes(), &jsonData)
+	if err != nil {
 		return warnings, fmt.Errorf("failed to parse ptrac data as JSON: %w", err)
 	}
 
@@ -111,7 +113,8 @@ func (r *Report) ExportPtrac(writer io.Writer) ([]error, error) {
 	encoder.SetIndent("", "  ")
 	encoder.SetEscapeHTML(false)
 
-	if err := encoder.Encode(jsonData); err != nil {
+	err = encoder.Encode(jsonData)
+	if err != nil {
 		return warnings, fmt.Errorf("failed to write ptrac data to writer: %w", err)
 	}
 

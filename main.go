@@ -31,6 +31,7 @@ import (
 func main() {
 	// Setup logger
 	var programLevel = new(slog.LevelVar) // Info by default
+
 	h := slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: programLevel})
 	slog.SetDefault(slog.New(h))
 
@@ -203,7 +204,8 @@ func initConfig() {
 	viper.SetConfigName(".plextrac")
 	viper.AddConfigPath("$HOME")
 
-	if err := viper.MergeInConfig(); err == nil {
+	err := viper.MergeInConfig()
+	if err == nil {
 		slog.Debug("Using config",
 			"configFile", viper.ConfigFileUsed(),
 		)
@@ -220,7 +222,7 @@ func initConfig() {
 
 	// Walk each parent of pwd starting at / looking for configs that overwride the one in $HOME
 	pwd, _ := os.Getwd()
-	for _, dir := range strings.Split(pwd, "/") {
+	for dir := range strings.SplitSeq(pwd, "/") {
 		configPath = append(configPath, dir)
 
 		configFile := path.Join(append(configPath, ".plextrac.yaml")...)
@@ -245,27 +247,33 @@ func initConfig() {
 	viper.AutomaticEnv()
 	viper.SetEnvPrefix("PLEXTRAC")
 
-	if err := viper.BindEnv("INSTANCEURL"); err != nil {
+	err = viper.BindEnv("INSTANCEURL")
+	if err != nil {
 		panic(err)
 	}
 
-	if err := viper.BindEnv("USERNAME"); err != nil {
+	err = viper.BindEnv("USERNAME")
+	if err != nil {
 		panic(err)
 	}
 
-	if err := viper.BindEnv("PASSWORD"); err != nil {
+	err = viper.BindEnv("PASSWORD")
+	if err != nil {
 		panic(err)
 	}
 
-	if err := viper.BindEnv("MFA"); err != nil {
+	err = viper.BindEnv("MFA")
+	if err != nil {
 		panic(err)
 	}
 
-	if err := viper.BindEnv("MFASEED"); err != nil {
+	err = viper.BindEnv("MFASEED")
+	if err != nil {
 		panic(err)
 	}
 
-	if err := viper.MergeInConfig(); err == nil {
+	err = viper.MergeInConfig()
+	if err == nil {
 		slog.Debug("Using environment config")
 	}
 }

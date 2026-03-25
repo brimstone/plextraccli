@@ -27,8 +27,10 @@ func NewPlextrac() (*plextrac.UserAgent, []error, error) {
 				"expires", expires,
 				"config", viper.ConfigFileUsed(),
 			)
+
 			v := viper.New()
 			v.SetConfigFile(SaveConfigFile)
+
 			err := v.ReadInConfig()
 			if err != nil {
 				// If there was an error reading the config, then don't worry
@@ -36,7 +38,9 @@ func NewPlextrac() (*plextrac.UserAgent, []error, error) {
 				//nolint:nilerr
 				return nil
 			}
+
 			v.Set("authtoken", token)
+
 			err = v.WriteConfig()
 			if err != nil {
 				return err

@@ -25,6 +25,8 @@ func Cmd() *cobra.Command {
 	}
 	// findingsCmd represents the findings command
 	cmd.PersistentFlags().String("cols", strings.Join(defaultCols, ","), "Columns to show")
+	// TODO sort
+	// TODO filter by tags, or severity, or whatever
 
 	return cmd
 }
@@ -81,9 +83,15 @@ func cmdFindings(cmd *cobra.Command, args []string) error {
 			warnings = append(warnings, w...)
 		}
 
+		published := "Draft"
+		if f.Published {
+			published = "Published"
+		}
+
 		rows = append(rows, []string{
-			f.Published,
 			f.Status,
+			published,
+			f.Severity,
 			f.Name,
 			strings.Join(f.Tags(), ","),
 		},
@@ -94,6 +102,7 @@ func cmdFindings(cmd *cobra.Command, args []string) error {
 		[]string{
 			"Status",
 			"Published",
+			"Severity",
 			"Name",
 			"Tags",
 		},

@@ -19,8 +19,9 @@ type Finding struct {
 	ID        int
 	Status    string
 	Name      string
-	Published string
+	Published bool
 	Evidence  string
+	Severity  string
 	tags      []string
 }
 
@@ -67,6 +68,12 @@ func (r *Report) Findings() ([]*Finding, []error, error) {
 			warnings = append(warnings, fmt.Errorf("couldn't coerce data[%d] %v into an int", i, f.Data[i]))
 		}
 		// TODO 1 Severity
+		i = 1
+		if n, ok := f.Data[i].(string); ok {
+			finding.Severity = n
+		} else {
+			warnings = append(warnings, fmt.Errorf("couldn't coerce data[%d] %v into a string", i, f.Data[i]))
+		}
 		// 2 Name
 		i = 2
 		if n, ok := f.Data[i].(string); ok {
@@ -84,10 +91,10 @@ func (r *Report) Findings() ([]*Finding, []error, error) {
 
 		// 4 TODO milliseconds since epoch Updated?
 		// 6 TODO milliseconds since epoch Created?
-		// 8 string Published
+		// 10 string Published
 		i = 10
 		if p, ok := f.Data[i].(string); ok {
-			finding.Published = p
+			finding.Published = p == "published"
 		} else {
 			warnings = append(warnings, fmt.Errorf("couldn't coerce data[%d] %v into a string", i, f.Data[i]))
 		}

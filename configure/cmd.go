@@ -4,6 +4,7 @@ package configure
 
 import (
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -40,6 +41,11 @@ func userHomeDir() string {
 func cmdConfigure(cmd *cobra.Command, args []string) error {
 	viper.SetConfigFile(filepath.Join(userHomeDir(), ".plextrac.yaml"))
 	viper.SetConfigType("yaml")
+
+	if viper.GetString("username") == "" {
+		slog.Warn("Username is blank")
+	}
+
 	fmt.Printf("Writing config to %s\n", viper.ConfigFileUsed())
 
 	err := viper.WriteConfig()

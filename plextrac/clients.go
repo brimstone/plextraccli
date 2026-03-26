@@ -16,10 +16,10 @@ type Client struct {
 	full bool
 	raw  map[string]any
 
-	ID       int64
-	Name     string
-	POC      string
-	POCEmail string
+	ID       int64  `json:"id"       jsonschema:"ID of client"`
+	Name     string `json:"name"     jsonschema:"Name of client"`
+	POC      string `json:"poc"      jsonschema:"Name of point of contact for client"`
+	POCEmail string `json:"pocemail" jsonschema:"Email address for point of contact for client"`
 }
 
 type clientResponse struct {

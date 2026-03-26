@@ -22,19 +22,18 @@ type Report struct {
 	templateID string
 	raw        map[string]any
 
-	ID               int64
-	CreatedAt        time.Time // 7
-	FindingsCount    float64   // 4
-	FindingsTemplate string    // 12
-	Name             string    // 1
-	ReportTemplate   string    // 11
-	StartDate        time.Time // 8
-	Status           string    // 3
-	StopDate         time.Time // 9
-	operators        []string  // 5
-	Reviewers        []string  // 6
-	tags             []string  // 10
-
+	ID               int64     `json:"id"                jsonschema:"Unique report identifier"`
+	CreatedAt        time.Time `json:"created_at"        jsonschema:"Report creation timestamp"                upstream:"7"`
+	FindingsCount    float64   `json:"findings_count"    jsonschema:"Number of findings in the report"         upstream:"4"`
+	FindingsTemplate string    `json:"findings_template" jsonschema:"Template used for findings"               upstream:"12"`
+	Name             string    `json:"name"              jsonschema:"Report name/title"                        upstream:"1"`
+	ReportTemplate   string    `json:"report_template"   jsonschema:"Template used for the report"             upstream:"11"`
+	StartDate        time.Time `json:"start_date"        jsonschema:"Report start date"                        upstream:"8"`
+	Status           string    `json:"status"            jsonschema:"Current status of the report"             upstream:"3"`
+	StopDate         time.Time `json:"stop_date"         jsonschema:"Report completion date"                   upstream:"9"`
+	Operators        []string  `json:"operators"         jsonschema:"List of operators assigned to the report" upstream:"5"`
+	Reviewers        []string  `json:"reviewers"         jsonschema:"List of reviewers for the report"         upstream:"6"`
+	tags             []string  //`json:"tags"              jsonschema:"Tags associated with the report"          upstream:"10"`
 }
 
 type reportResponse struct {
@@ -93,6 +92,12 @@ func (c *Client) Reports() ([]*Report, []error, error) {
 			c:  c,
 		}
 
+		/*
+			for i := range r.Data {
+				fmt.Printf("%d: %#v\n", i, r.Data[i])
+			}
+		*/
+
 		// Name 1
 		if n, ok := r.Data[1].(string); ok {
 			report.Name = n
@@ -102,7 +107,7 @@ func (c *Client) Reports() ([]*Report, []error, error) {
 
 		// CreatedAt 7
 		if c, ok := r.Data[7].(float64); ok {
-			report.CreatedAt = time.Unix(int64(c), 0).UTC()
+			report.CreatedAt = time.Unix(int64(c)/1000, 0).UTC()
 		} else {
 			warnings = append(warnings, fmt.Errorf("%d: can't coerce data[7] into float64 for CreatedAt: %#v", r.ID, r.Data[7]))
 		}
@@ -162,11 +167,11 @@ func (c *Client) Reports() ([]*Report, []error, error) {
 			}
 		}
 
-		// TODO Operators 5
+		// Operators 5
 		if s, ok := r.Data[5].([]any); ok {
 			for i, j := range s {
 				if o, ok := j.(string); ok {
-					report.operators = append(report.operators, o)
+					report.Operators = append(report.Operators, o)
 				} else {
 					warnings = append(warnings, fmt.Errorf("can't coerce data[5][%d] into string for slice for Operators: %#v", i, r.Data[5]))
 				}
@@ -177,7 +182,7 @@ func (c *Client) Reports() ([]*Report, []error, error) {
 
 		// TODO Reviewers 6
 
-		// TODO Tags 10
+		// Tags 10
 		if s, ok := r.Data[10].([]any); ok {
 			for i, j := range s {
 				if t, ok := j.(string); ok {
@@ -326,10 +331,6 @@ func (r *Report) GetTemplateID() (string, []error, error) {
 	}
 
 	return r.templateID, warnings, err
-}
-
-func (r *Report) Operators() []string {
-	return r.operators
 }
 
 func (r *Report) Tags() []string {

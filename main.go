@@ -16,6 +16,7 @@ import (
 	"github.com/brimstone/plextraccli/export"
 	"github.com/brimstone/plextraccli/findings"
 	"github.com/brimstone/plextraccli/lint"
+	"github.com/brimstone/plextraccli/mcp"
 	"github.com/brimstone/plextraccli/narratives"
 	"github.com/brimstone/plextraccli/reports"
 	"github.com/brimstone/plextraccli/tags"
@@ -181,6 +182,7 @@ func main() {
 	rootCmd.AddCommand(export.Cmd())
 	rootCmd.AddCommand(findings.Cmd())
 	rootCmd.AddCommand(lint.Cmd())
+	rootCmd.AddCommand(mcp.Cmd())
 	rootCmd.AddCommand(narratives.Cmd())
 	rootCmd.AddCommand(reports.Cmd())
 	rootCmd.AddCommand(tags.Cmd())

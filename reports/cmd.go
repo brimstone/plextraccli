@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/brimstone/plextraccli/plextrac"
 	"github.com/brimstone/plextraccli/utils"
 
 	"github.com/spf13/cobra"
@@ -38,10 +39,10 @@ func Cmd() *cobra.Command {
 	return cmd
 }
 
-func cmdReports(cmd *cobra.Command, args []string) error {
+func getReports(clientPartial string) (*plextrac.Client, []*plextrac.Report, []error, error) {
 	p, warnings, err := utils.NewPlextrac()
 	if err != nil {
-		return err
+		return nil, nil, warnings, err
 	}
 
 	for _, warning := range warnings {
@@ -50,17 +51,23 @@ func cmdReports(cmd *cobra.Command, args []string) error {
 		)
 	}
 
+	c, err := p.ClientByPartial(clientPartial)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	reports, warnings, err := c.Reports()
+
+	return c, reports, warnings, err
+}
+
+func cmdReports(cmd *cobra.Command, args []string) error {
 	clientPartial := viper.GetString("client")
 	if clientPartial == "" {
 		return errors.New("must specify a client")
 	}
 
-	c, err := p.ClientByPartial(clientPartial)
-	if err != nil {
-		return err
-	}
-
-	reports, warnings, err := c.Reports()
+	_, reports, warnings, err := getReports(clientPartial)
 	if err != nil {
 		return err
 	}
@@ -76,7 +83,7 @@ func cmdReports(cmd *cobra.Command, args []string) error {
 			r.StopDate.Format(time.DateOnly),
 			r.Name,
 			strings.Join(r.Tags(), ","),
-			strings.Join(r.Operators(), ","),
+			strings.Join(r.Operators, ","),
 			strconv.FormatInt(r.ID, 10),
 		})
 	}

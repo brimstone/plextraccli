@@ -7,6 +7,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/brimstone/plextraccli/plextrac"
 	"github.com/brimstone/plextraccli/utils"
 
 	"github.com/spf13/cobra"
@@ -27,10 +28,10 @@ func Cmd() *cobra.Command {
 	return cmd
 }
 
-func cmdClients(cmd *cobra.Command, args []string) error {
+func getClients() ([]*plextrac.Client, error) {
 	p, warnings, err := utils.NewPlextrac()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	for _, warning := range warnings {
@@ -41,10 +42,19 @@ func cmdClients(cmd *cobra.Command, args []string) error {
 
 	clients, err := p.Clients()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	sort.Slice(clients, func(i, j int) bool { return clients[i].Name < clients[j].Name })
+
+	return clients, err
+}
+
+func cmdClients(cmd *cobra.Command, args []string) error {
+	clients, err := getClients()
+	if err != nil {
+		return err
+	}
 
 	showCols := utils.AggregateCols(defaultCols, cmd.Flag("cols").Value.String())
 

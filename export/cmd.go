@@ -134,13 +134,14 @@ func cmdExport(cmd *cobra.Command, args []string) error {
 		if err != nil {
 			return err
 		}
-
 		// check if filename already exists
 		// TODO check for force flag
 		_, err = os.Stat(filename)
 		if !errors.Is(err, os.ErrNotExist) {
 			return fmt.Errorf("%s already exists", filename)
 		}
+
+		err = nil
 
 		file, err := os.Create(filename) //nolint:gosec
 		if err != nil {

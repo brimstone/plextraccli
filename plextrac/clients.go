@@ -16,20 +16,22 @@ type Client struct {
 	full bool
 	raw  map[string]any
 
-	ID       int64  `json:"id"       jsonschema:"ID of client"`
-	Name     string `json:"name"     jsonschema:"Name of client"`
-	POC      string `json:"poc"      jsonschema:"Name of point of contact for client"`
-	POCEmail string `json:"pocemail" jsonschema:"Email address for point of contact for client"`
+	ID          int64  `json:"id"          jsonschema:"ID of client"`
+	Description string `json:"description" jsonschema:"Description of client"`
+	Name        string `json:"name"        jsonschema:"Name of client"`
+	POC         string `json:"poc"         jsonschema:"Name of point of contact for client"`
+	POCEmail    string `json:"pocemail"    jsonschema:"Email address for point of contact for client"`
 }
 
 type clientResponse struct {
 	Status string `json:"status"`
 	Data   []struct {
-		ClientID int      `json:"client_id"`
-		Name     string   `json:"name"`
-		Tags     []string `json:"tags"`
-		POC      string   `json:"poc,omitempty"`
-		POCEmail string   `json:"poc_email,omitempty"`
+		ClientID    int      `json:"client_id"`
+		Description string   `json:"description,omitempty"`
+		Name        string   `json:"name"`
+		POC         string   `json:"poc,omitempty"`
+		POCEmail    string   `json:"poc_email,omitempty"`
+		Tags        []string `json:"tags"`
 		// TODO users is a dict of:
 		// useremail: {role, classificationId}
 		// role can be any of:
@@ -97,12 +99,13 @@ func (ua *UserAgent) Clients() ([]*Client, error) {
 
 	for _, c := range clientResp.Data {
 		clients = append(clients, &Client{
-			ID:       int64(c.ClientID),
-			Name:     c.Name,
-			POC:      c.POC,
-			POCEmail: c.POCEmail,
-			tags:     c.Tags,
-			ua:       ua,
+			ID:          int64(c.ClientID),
+			Description: c.Description,
+			Name:        c.Name,
+			POC:         c.POC,
+			POCEmail:    c.POCEmail,
+			tags:        c.Tags,
+			ua:          ua,
 		})
 	}
 

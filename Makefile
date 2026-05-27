@@ -28,6 +28,7 @@ watch:
 
 .PHONY: pre-commit
 pre-commit: plextraccli
+	go test -v ./...
 	go tool golangci-lint run --disable godox
 
 .PHONY: release

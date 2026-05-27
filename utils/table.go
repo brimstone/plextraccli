@@ -77,7 +77,10 @@ func LowerCaseHeaders(h []string) []string {
 	return x
 }
 
-func transposeMatrix(matrix [][]string) [][]string {
+func TransposeMatrix(matrix [][]string) [][]string {
+	if matrix == nil {
+		return nil
+	}
 	// stolen from https://codesignal.com/learn/courses/multidimensional-arrays-and-their-traversal-in-go/lessons/transposing-matrices-in-go-a-hands-on-tutorial
 	rows := len(matrix)
 	cols := len(matrix[0])
@@ -97,7 +100,11 @@ func transposeMatrix(matrix [][]string) [][]string {
 }
 
 func ShowTable(headers []string, rows [][]string, showCols []string) {
-	transposeCols := transposeMatrix(rows)
+	if rows == nil {
+		return
+	}
+
+	transposeCols := TransposeMatrix(rows)
 
 	var toShowMatrix [][]string
 
@@ -125,7 +132,7 @@ func ShowTable(headers []string, rows [][]string, showCols []string) {
 		}
 	}
 
-	showRows := transposeMatrix(toShowMatrix)
+	showRows := TransposeMatrix(toShowMatrix)
 
 	if isatty.IsTerminal(os.Stdout.Fd()) {
 		t := NewTable()

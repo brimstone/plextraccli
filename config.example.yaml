@@ -2,3 +2,22 @@ username: user@domain.com
 password: password1
 mfaseed: XXXXX
 client: Demo client
+lint:
+  requiredsections:
+    - section: "Executive Summary"
+    - section: "Project Team"
+    - section: "Conclusion"
+    - section: "Appendix: Vulnerability Scan Results"
+      tags: [scope_ipt, scope_ept]
+    - section: "Finding Summary: Internal Network Penetration Test"
+      tags:
+        - scope_ipt
+    - section: "Attack Narrative: Internal Network Penetration Test"
+      tags:
+        - scope_ipt
+    - section: "Finding Summary: External Network Penetration Test"
+      tags:
+        - scope_ept
+    - section: "Attack Narrative: External Network Penetration Test"
+      tags:
+        - scope_ept

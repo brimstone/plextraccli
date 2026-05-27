@@ -14,3 +14,12 @@ type ConfigTag struct {
 	Name       string
 	Narratives []string
 }
+
+type LintConfig struct {
+	RequiredSections []RequiredSection `mapstructure:"requiredsections"`
+}
+
+type RequiredSection struct {
+	Section string   `mapstructure:"section"`
+	Tags    []string `mapstructure:"tags"`
+}

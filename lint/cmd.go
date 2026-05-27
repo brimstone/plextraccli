@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/brimstone/plextraccli/plextrac"
+	"github.com/brimstone/plextraccli/types"
 	"github.com/brimstone/plextraccli/utils"
 
 	"github.com/spf13/cobra"
@@ -68,34 +69,40 @@ func lintReport(report *plextrac.Report) []error {
 		titles = append(titles, s.Title)
 	}
 
-	// TODO move this out to the config file
-	requiredSections := []string{
-		"Executive Summary",
-		"Project Team",
-		"Conclusion",
-		"Appendix: Vulnerability Scan Results",
+	var lintCfg types.LintConfig
+
+	err = viper.UnmarshalKey("lint", &lintCfg)
+	if err != nil {
+		errs = append(errs, fmt.Errorf("error reading lint config: %w", err))
 	}
 
-	// TODO move this out to the config file
+	knownTags := make(map[string]bool)
+
+	for _, rs := range lintCfg.RequiredSections {
+		for _, tag := range rs.Tags {
+			knownTags[tag] = true
+		}
+	}
+
 	for _, t := range report.Tags() {
-		switch t {
-		case "scope_ipt":
-			requiredSections = append(requiredSections, "Finding Summary: Internal Network Penetration Test")
-			requiredSections = append(requiredSections, "Attack Narrative: Internal Network Penetration Test")
-
-			continue
-		case "scope_ept":
-			requiredSections = append(requiredSections, "Finding Summary: External Network Penetration Test")
-			requiredSections = append(requiredSections, "Attack Narrative: External Network Penetration Test")
-
-			continue
-		case "scope_wireless":
-			requiredSections = append(requiredSections, "Finding Summary: Wireless Penetration Test")
-			requiredSections = append(requiredSections, "Attack Narrative: Wireless Penetration Test")
-
-			continue
-		default:
+		if !knownTags[t] {
 			errs = append(errs, fmt.Errorf("report uses unknown tag: %s", t))
+		}
+	}
+
+	var requiredSections []string
+
+	for _, rs := range lintCfg.RequiredSections {
+		if len(rs.Tags) == 0 {
+			requiredSections = append(requiredSections, rs.Section)
+		} else {
+			for _, t := range report.Tags() {
+				for _, rt := range rs.Tags {
+					if t == rt {
+						requiredSections = append(requiredSections, rs.Section)
+					}
+				}
+			}
 		}
 	}
 

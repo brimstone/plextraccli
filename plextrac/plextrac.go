@@ -23,6 +23,7 @@ type OnRenewFunc func(string, time.Time) error
 type UserAgent struct {
 	authToken      string
 	expires        time.Time
+	httpClient     *http.Client
 	onRenewFunc    OnRenewFunc
 	tenantID       int
 	tenantURL      string
@@ -50,6 +51,7 @@ type NewOptions struct {
 	MFASeed     string
 	AuthToken   string
 	OnRenewFunc OnRenewFunc
+	HTTPClient  *http.Client
 }
 
 func New(o NewOptions) (*UserAgent, []error, error) {
@@ -69,6 +71,11 @@ func New(o NewOptions) (*UserAgent, []error, error) {
 		tenantURL:   o.InstanceURL,
 		authToken:   o.AuthToken,
 		onRenewFunc: o.OnRenewFunc,
+		httpClient:  o.HTTPClient,
+	}
+
+	if ua.httpClient == nil {
+		ua.httpClient = http.DefaultClient
 	}
 
 	if o.AuthToken != "" {
@@ -130,7 +137,7 @@ func (ua *UserAgent) Login(u, p, token, seed string) ([]error, error) {
 
 	req.Header.Set("Content-Type", "application/json")
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := ua.httpClient.Do(req)
 	if err != nil {
 		return warnings, err
 	}
@@ -177,7 +184,7 @@ func (ua *UserAgent) Login(u, p, token, seed string) ([]error, error) {
 
 		req.Header.Set("Content-Type", "application/json")
 
-		resp, err := http.DefaultClient.Do(req)
+		resp, err := ua.httpClient.Do(req)
 		if err != nil {
 			return warnings, err
 		}
@@ -280,7 +287,7 @@ func (ua *UserAgent) checkExpired() ([]error, error) {
 
 	req.Header.Set("Authorization", "Bearer "+ua.authToken)
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := ua.httpClient.Do(req)
 	if err != nil {
 		return warnings, err
 	}
@@ -344,7 +351,7 @@ func (ua *UserAgent) apiGet(path string, response any) (string, error) {
 
 	req.Header.Set("Authorization", "Bearer "+ua.authToken)
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := ua.httpClient.Do(req)
 	if err != nil {
 		return "", err
 	}
@@ -402,7 +409,7 @@ func (ua *UserAgent) apiCall(method, path string, body any, response any) (strin
 
 	req.Header.Set("Authorization", "Bearer "+ua.authToken)
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := ua.httpClient.Do(req)
 	if err != nil {
 		return "", err
 	}

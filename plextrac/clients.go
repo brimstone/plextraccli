@@ -195,7 +195,6 @@ func (c *Client) RemoveTags(tags []string) ([]error, error) {
 	c.tags = slices.DeleteFunc(c.tags, func(t string) bool {
 		return slices.Contains(tags, t)
 	})
-	fmt.Printf("tags: %#v\n", c.tags)
 	c.raw["tags"] = c.tags
 	warnings2, err := c.update()
 	warnings = append(warnings, warnings2...)

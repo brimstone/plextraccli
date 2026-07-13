@@ -648,7 +648,7 @@ func TestClient_SetTags(t *testing.T) {
 		}
 
 		// Handle GET to /api/v1/client/123 (for EnsureFull)
-		if r.URL.Path == "/api/v1/client/123" && r.Method == http.MethodGet {
+		if r.URL.Path == clientDetails && r.Method == http.MethodGet {
 			ensureFullCalled = true
 
 			// Return some raw client data (minimal for the test)
@@ -675,7 +675,7 @@ func TestClient_SetTags(t *testing.T) {
 		}
 
 		// Handle PUT to /api/v1/client/123 (for update)
-		if r.URL.Path == "/api/v1/client/123" && r.Method == http.MethodPut {
+		if r.URL.Path == clientDetails && r.Method == http.MethodPut {
 			updateCalled = true
 
 			// Decode the request body to see what tags were sent
@@ -792,5 +792,176 @@ func TestClient_SetTags(t *testing.T) {
 	// Check that the updated tags are exactly the new tags
 	if !slices.Equal(updatedTags, newTags) {
 		t.Fatalf("expected updated tags to be %v, got %v", newTags, updatedTags)
+	}
+}
+
+// TestClient_SetDescription tests the SetDescription method on a Client.
+func TestClient_SetDescription(t *testing.T) {
+	t.Parallel()
+
+	var (
+		clientsCalled      bool
+		ensureFullCalled   bool
+		updateCalled       bool
+		updatedDescription string
+	)
+
+	// Handler for the specific test
+	handler := func(w http.ResponseWriter, r *http.Request) {
+		// Handle POST to /api/v2/clients (for ua.Clients())
+		if r.URL.Path == clientsEndpoint && r.Method == http.MethodPost {
+			clientsCalled = true
+
+			w.Header().Set("Content-Type", "application/json")
+
+			err := json.NewEncoder(w).Encode(createTestClientsResponse())
+			if err != nil {
+				t.Fatalf("Failed to encode response: %v", err)
+			}
+
+			return
+		}
+
+		// Handle GET to /api/v1/client/123 (for EnsureFull)
+		if r.URL.Path == clientDetails && r.Method == http.MethodGet {
+			ensureFullCalled = true
+
+			// Return some raw client data (minimal for the test)
+			raw := map[string]any{
+				"client_id":   123,
+				"cuid":        "somecuid",
+				"doc_type":    "client",
+				"licenseKeys": []string{},
+				"logo":        "",
+				"tenant_id":   1,
+				"users":       map[string]any{},
+				// Include the existing description so we can see it being updated
+				"description": "Original description",
+			}
+
+			w.Header().Set("Content-Type", "application/json")
+
+			err := json.NewEncoder(w).Encode(raw)
+			if err != nil {
+				t.Fatalf("Failed to encode raw client response: %v", err)
+			}
+
+			return
+		}
+
+		// Handle PUT to /api/v1/client/123 (for update)
+		if r.URL.Path == clientDetails && r.Method == http.MethodPut {
+			updateCalled = true
+
+			// Decode the request body to see what description was sent
+			var raw map[string]any
+
+			err := json.NewDecoder(r.Body).Decode(&raw)
+			if err != nil {
+				t.Fatalf("Failed to decode update request body: %v", err)
+			}
+
+			if desc, ok := raw["description"].(string); ok {
+				updatedDescription = desc
+			}
+
+			w.Header().Set("Content-Type", "application/json")
+
+			err = json.NewEncoder(w).Encode(map[string]any{
+				"status": "success",
+			})
+			if err != nil {
+				t.Fatalf("Failed to encode update response: %v", err)
+			}
+
+			return
+		}
+
+		// For token refresh endpoint
+		if r.Method == http.MethodPut && strings.Contains(r.URL.Path, "token/refresh") {
+			w.Header().Set("Content-Type", "application/json")
+
+			err := json.NewEncoder(w).Encode(map[string]any{
+				"status":    "success",
+				"tenant_id": 42,
+				"token":     genJWTClients(time.Now().Add(24 * time.Hour)),
+			})
+			if err != nil {
+				t.Fatalf("Failed to encode token refresh response: %v", err)
+			}
+
+			return
+		}
+
+		// Default response for other endpoints (should not happen in test)
+		w.Header().Set("Content-Type", "application/json")
+
+		err := json.NewEncoder(w).Encode(map[string]any{
+			"status": "success",
+			"data":   []map[string]any{},
+		})
+		if err != nil {
+			t.Fatalf("Failed to encode default response: %v", err)
+		}
+	}
+
+	server, httpClient := testServerWithHandler(t, handler)
+	defer server.Close()
+
+	ua, _, err := plextrac.New(plextrac.NewOptions{
+		InstanceURL: server.Listener.Addr().String(),
+		AuthToken:   genJWTClients(time.Now().Add(24 * time.Hour)),
+		HTTPClient:  httpClient,
+	})
+	if err != nil {
+		t.Fatalf("New() returned error: %v", err)
+	}
+
+	// Get the client to test on
+	var clients []*plextrac.Client
+
+	clients, err = ua.Clients()
+	if err != nil {
+		t.Fatalf("Clients() returned error: %v", err)
+	}
+
+	if len(clients) == 0 {
+		t.Fatal("expected at least one client")
+	}
+
+	client := clients[0]
+
+	// Call SetDescription with a new description
+	newDescription := "Updated test description"
+
+	warnings, err := client.SetDescription(newDescription)
+	if err != nil {
+		t.Fatalf("SetDescription returned error: %v", err)
+	}
+	// We expect no warnings in this test
+	if len(warnings) != 0 {
+		t.Fatalf("expected no warnings, got %v", warnings)
+	}
+
+	// Check that the client's description was updated in memory
+	if client.Description != newDescription {
+		t.Fatalf("expected description to be '%s', got '%s'", newDescription, client.Description)
+	}
+
+	// Verify that the HTTP calls were made as expected
+	if !clientsCalled {
+		t.Fatal("expected clients endpoint to be called")
+	}
+
+	if !ensureFullCalled {
+		t.Fatal("expected EnsureFull to be called (GET to v1/client/123)")
+	}
+
+	if !updateCalled {
+		t.Fatal("expected update to be called (PUT to v1/client/123)")
+	}
+	// Check that the updated description matches what we sent
+	if updatedDescription != newDescription {
+		t.Fatalf("expected updated description to be '%s', got '%s'", newDescription, updatedDescription)
 	}
 }

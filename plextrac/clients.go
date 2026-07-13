@@ -214,6 +214,19 @@ func (c *Client) SetTags(tags []string) ([]error, error) {
 
 	return warnings, err
 }
+func (c *Client) SetDescription(description string) ([]error, error) {
+	warnings, err := c.EnsureFull()
+	if err != nil {
+		return warnings, err
+	}
+
+	c.Description = description
+	c.raw["description"] = description
+	warnings2, err := c.update()
+	warnings = append(warnings, warnings2...)
+
+	return warnings, err
+}
 func (c *Client) update() ([]error, error) {
 	path := fmt.Sprintf("v1/client/%d", c.ID)
 

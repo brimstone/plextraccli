@@ -61,7 +61,7 @@ type Tagger interface {
 	SetTags(tags []string) ([]error, error)
 }
 
-func getTagger(p *plextrac.UserAgent) (Tagger, error) { //nolint:ireturn
+func getTagger(p *plextrac.UserAgent) (Tagger, error) {
 	// Get Client
 	clientPartial := viper.GetString("client")
 	if clientPartial == "" {

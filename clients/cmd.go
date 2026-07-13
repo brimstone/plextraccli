@@ -3,6 +3,7 @@
 package clients
 
 import (
+	"errors"
 	"log/slog"
 	"sort"
 	"strings"
@@ -24,6 +25,16 @@ func Cmd() *cobra.Command {
 	}
 
 	cmd.PersistentFlags().String("cols", strings.Join(defaultCols, ","), "Columns to show")
+
+	var setCmd = &cobra.Command{
+		Use:   "set [client] [flags]",
+		Short: "Set client properties",
+		Long:  `Set client properties such as description, name, poc, etc.`,
+		RunE:  cmdSetClient,
+	}
+	setCmd.Flags().String("description", "", "Description to set for the client")
+	// Additional flags can be added here for other client properties
+	cmd.AddCommand(setCmd)
 
 	return cmd
 }
@@ -78,6 +89,49 @@ func cmdClients(cmd *cobra.Command, args []string) error {
 		rows,
 		showCols,
 	)
+
+	return nil
+}
+
+func cmdSetClient(cmd *cobra.Command, args []string) error {
+	if len(args) != 1 {
+		return errors.New("client identifier required")
+	}
+
+	clientIdentifier := args[0]
+
+	p, warnings, err := utils.NewPlextrac()
+	if err != nil {
+		return err
+	}
+
+	for _, warning := range warnings {
+		slog.Warn("Warning while creating plextrac instance",
+			"warning", warning,
+		)
+	}
+
+	client, err := p.ClientByPartial(clientIdentifier)
+	if err != nil {
+		return err
+	}
+
+	// Handle description flag
+	description, err := cmd.Flags().GetString("description")
+	if err != nil {
+		return err
+	}
+
+	if description != "" {
+		_, err = client.SetDescription(description)
+		if err != nil {
+			return err
+		}
+
+		slog.Info("Client description updated successfully", "client", client.Name, "description", description)
+	}
+
+	// Additional flags can be handled here for other client properties
 
 	return nil
 }
